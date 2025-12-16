@@ -42424,7 +42424,46 @@ $dois=array(
 '10.7818/ECOS.2016.25-2.09',
 );
 
+/*
+$dois=array('https://doi.org/10.1134/S0013873818010074');
+
+$dois = array('10.5281/zenodo.8011284');
+
+$dois = array('10.3897/dez.68.59462');
+
+$dois = array('10.2476/asjaa.66.73');
+
+$dois=array(
+'10.1093/aesa/saae018', // Curating BOLD records via Bayesian phylogenetic assignments enables harmonization of regional subgeneric classifications and cryptic species detection within the genus Tachina (Diptera: Tachinidae)
+'10.1371/journal.pone.0331216', // Identification of BOLD engine deficiencies and suggestions for improvement based on a curated Tachina (Diptera) record set
+);
+
+// manually found paper that cites GenBank sequences, 
+// wonder if we can match this to partial record in genBank using knowledge graph?
+// 8278c710aed0affbac3a29b32fe44828
+// {"title":"DNA barcoding of Mediterranean fish species","author":[{"literal":"Shirak,A."},{"literal":"Dor,L."},{"literal":"Seroussi,E."},{"literal":"Ron,M."},{"literal":"Hulata,G."},{"literal":"Golani,D."}],"id":"8278c710aed0affbac3a29b32fe44828"}
+
+$dois=array(
+//'10.12681/mms.1384', 
+//'https://doi.org/10.3897/nl.47.122906'
+'10.3897/alpento.8.127794',
+);
+
+$dois=array(
+'10.24272/j.issn.2095-8137.2020.023',
+);
+*/
+
+$debug = true;
+$debug = false;
 $force = false;
+
+$options = [
+	'allcitations', 
+	'nquads'
+	];
+$options = [];
+
 
 $count = 1;
 
@@ -42462,8 +42501,7 @@ foreach ($dois as $doi)
 		// Give server a break 
     	$rand = rand(100000, 3000000);
     	echo "\n# ...sleeping for " . round(($rand / 1000000),2) . ' seconds' . "\n\n";
-    	usleep($rand);		
-		
+    	usleep($rand);				
 	}
 	
 	$csl = json_decode($json);
@@ -42475,15 +42513,21 @@ foreach ($dois as $doi)
 			$csl = $csl->message;
 		}
 		
-		if (0)
+		if ($debug)
 		{
 			print_r($csl);
 		}
 		
-		$quads = csl_to_quads($csl);
+		$quads = csl_to_quads($csl, $options);
 		
 		foreach ($quads as $q)
 		{
+			if (in_array('nquads', $options))
+			{
+				$graph_uri = 'https://doi.org/' . $doi;
+				$q[] = $graph_uri;
+			}
+		
 			$row = array();
 			foreach ($q as $c)
 			{

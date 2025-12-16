@@ -2,6 +2,9 @@
 
 error_reporting(E_ALL);
 
+require_once(dirname(__FILE__) . '/vendor/autoload.php');
+
+
 //----------------------------------------------------------------------------------------
 function get($url, $content_type = '')
 {	
@@ -21,15 +24,18 @@ function get($url, $content_type = '')
 	  CURLOPT_COOKIEFILE		=> sys_get_temp_dir() . '/cookies.txt',
 	  
 	);
+	
+	$header = array(
+		"Accept-Language: en-gb",
+		"User-agent: Mozilla/5.0 (iPad; U; CPU OS 3_2_1 like Mac OS X; en-us) AppleWebKit/531.21.10 (KHTML, like Gecko) Mobile/7B405" 	
+	);
 
 	if ($content_type != '')
 	{
-		$opts[CURLOPT_HTTPHEADER] = array(
-			"Accept: " . $content_type, 
-			"Accept-Language: en-gb",
-			"User-agent: Mozilla/5.0 (iPad; U; CPU OS 3_2_1 like Mac OS X; en-us) AppleWebKit/531.21.10 (KHTML, like Gecko) Mobile/7B405" 
-		);
+		$header[] = "Accept: " . $content_type;
 	}
+	
+	$opts[CURLOPT_HTTPHEADER] = $header;
 	
 	$ch = curl_init();
 	curl_setopt_array($ch, $opts);
@@ -176,12 +182,16 @@ function simplify_csl($csl)
 }
 
 //----------------------------------------------------------------------------------------
-function csl_to_quads($csl)
+function csl_to_quads($csl, $options = [])
 {
 	$quads = array();
 	
+	$cuid = new EndyJasmi\Cuid;
+	
 	$s = null;
 	
+	// By default use DOI as @id, if no DOI then use URL. If no URL,
+	// use CSL id if it is a URI, otherwise we bail.
 	if (!$s)
 	{
 		if (isset($csl->DOI))
@@ -206,6 +216,7 @@ function csl_to_quads($csl)
 		}
 	}	
 	
+	// if we don't have something we can use as an identifier then we bail(?)
 	if (!$s)
 	{
 		return $quads;
@@ -228,6 +239,7 @@ function csl_to_quads($csl)
 				break;
 			
 			case 'article-journal':
+		    case 'journal-article':
 				$type = 'ScholarlyArticle';
 				break;
 
@@ -358,8 +370,7 @@ function csl_to_quads($csl)
 				$abstract
 				);
 		}
-	}
-	
+	}	
 	
 	// date ------------------------------------------------------------------------------
 	if (isset($csl->issued))
@@ -370,18 +381,45 @@ function csl_to_quads($csl)
 		// sanity check
 		if (is_numeric($d[0]))
 		{
+			$datetype = 'date';
+		
 			if ( count($d) > 0 ) $year = $d[0] ;
 			if ( count($d) > 1 ) $month = preg_replace ( '/^0+(..)$/' , '$1' , '00'.$d[1] ) ;
 			if ( count($d) > 2 ) $day = preg_replace ( '/^0+(..)$/' , '$1' , '00'.$d[2] ) ;
-			if ( isset($month) and isset($day) ) $date = "$year-$month-$day";
-			else if ( isset($month) ) $date = "$year-$month-00";
-			else if ( isset($year) ) $date = "$year-00-00";
+			if ( isset($month) and isset($day) )
+			{
+				$date     = "$year-$month-$day";
+				$datetype = 'date';
+			}
+			else if ( isset($month) )
+			{
+				$date     = "$year-$month";
+				$datetype = 'gYearMonth';				
+			}
+			else if ( isset($year) ) 
+			{
+				$date     = "$year";
+				$datetype = 'gYear';	
+			}
 			
-			$quads[] = array(
-				$s, 
-				'http://schema.org/datePublished', 
-				'"' . $date . '"'  // treat as simple literal
-				);
+			if (0)
+			{
+				// treat as simple literal
+				$quads[] = array(
+					$s, 
+					'http://schema.org/datePublished', 
+					'"' . $date . '"'
+					);
+			}
+			else
+			{
+				// treat as date
+				$quads[] = array(
+					$s, 
+					'http://schema.org/datePublished', 
+					'"' . $date . '"^^<http://www.w3.org/2001/XMLSchema#' . $datetype . '>' 
+					);			
+			}
 		}				
 	}		
 	
@@ -399,7 +437,8 @@ function csl_to_quads($csl)
 			
 			if ($funder_id == '')
 			{
-				$funder_id = $s . '#' . md5(json_encode($funder));
+				// blank node
+				$funder_id = '_:' . $cuid->cuid();
 			}
 		
 			// funder is an organisation
@@ -431,8 +470,9 @@ function csl_to_quads($csl)
 				// awards are text strings, e.g. grant numbers
 				foreach ($funder->award as $award)
 				{
-					$grant_id = '_:' . md5(json_encode($award));
-					
+					// blank node
+					$grant_id = '_:' . $cuid->cuid();
+										
 					// is a schema:Grant
 					$quads[] = array(
 						$grant_id, 
@@ -493,10 +533,10 @@ function csl_to_quads($csl)
 				}
 			}
 			
-			// construct an arbitrary id
+			// no guid then blank node
 			if ($creator_id == '')
 			{
-				$creator_id = $s  . '#' . md5(json_encode($creator));
+				$creator_id = '_:' . $cuid->cuid();
 			}	
 			
 			// link work to creator
@@ -566,23 +606,28 @@ function csl_to_quads($csl)
 			// Decide how to handle citations that lack DOIs, what level of detail to include, etc.
 			// Also decide how to refer to them, e.g. using "key" as part of a fragment identifier
 			
-			if ($cited_id == '')
+			if ($cited_id == '' && in_array('allcitations', $options))
 			{
-				/*
-				if (isset($reference->key))
-				{
-					$fragment = $reference->key;
-					$fragment = preg_replace('/[\t\n\r]/u', '', $fragment);
-					$fragment = preg_replace('/[\|\/\.\s]/u', '-', $fragment);
-					
-					$cited_id = $graph_uri . '#' . $fragment;
-				}	
-				*/		
+				// blank node
+				$cited_id = '_:' . $cuid->cuid();	
 			}
+			
+			// local identifier (do we use this?)
+			$key = '';
+			if (isset($reference->key))
+			{
+				$key = $reference->key;
+				$key = preg_replace('/[\t\n\r]/u', '', $key);
+			}			
 						
 			if ($cited_id != '')
 			{
 				$add = isset($reference->DOI); 
+				
+				if (!$add)
+				{
+					$add = isset($reference->unstructured); 
+				}
 				
 				if ($add)
 				{
@@ -605,6 +650,20 @@ function csl_to_quads($csl)
 							);
 					
 					}
+
+					if (isset($reference->unstructured))
+					{
+						$text = $reference->unstructured;
+						$text = '"' .  nice_literal($text)  . '"';
+						
+						$quads[] = array(
+							$cited_id, 
+							'http://schema.org/description', 
+							$text
+							);
+					
+					}
+					
 				}
 			}
 		}
@@ -637,6 +696,40 @@ function csl_to_quads($csl)
 			}
 		}
 	}
+
+	// publisher -------------------------------------------------------------------------
+	if (isset($csl->publisher))
+	{
+		if (is_string($csl->publisher))
+		{
+			// blank node
+			$publisher_id = '_:' . $cuid->cuid();
+			
+			// link to work
+			$quads[] = array(
+				$s, 
+				'http://schema.org/publisher', 
+				$publisher_id
+				);		
+				
+			// type 
+			$quads[] = array(
+				$publisher_id, 
+				'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 
+				'http://schema.org/Organization'				
+				);				
+				
+			// name
+			$o = '"' . nice_literal($csl->publisher) . '"';	
+			
+			$quads[] = array(
+				$publisher_id, 
+				'http://schema.org/name', 
+				$o
+				);	
+		}
+	}
+	
 	
 	// CSL for display -------------------------------------------------------------------	
 	$cleaned_csl = simplify_csl($csl);

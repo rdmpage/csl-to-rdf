@@ -1,0 +1,12 @@
+{
+    "name": "rpage/csl-to-rdf",
+    "require": {
+        "endyjasmi/cuid": "^2.1"
+    },
+    "authors": [
+        {
+            "name": "Roderic Page",
+            "email": "rdmpage@gmail.com"
+        }
+    ]
+}

@@ -12,8 +12,6 @@ $urls=array(
 'https://dl.ndl.go.jp/pid/10366562',
 );
 
-
-
 $force = false;
 
 $count = 1;
@@ -33,9 +31,9 @@ foreach ($urls as $url)
 		umask($oldumask);
 	}
 	
-	$parts = explode('/', $url);
+	$path = parse_url($url, PHP_URL_PATH);
 	
-	$filename  = $cache_dir . '/' . array_pop($parts) . '.json';
+	$filename  = $cache_dir . '/' . rawurlencode($path) . '.json';
 	
 	if (file_exists($filename) && !$force)
 	{
@@ -65,8 +63,10 @@ foreach ($urls as $url)
 			print_r($csl);
 		}
 		
-		$quads = csl_to_quads($csl);
+		echo "# $url\n";
 		
+		$quads = csl_to_quads($csl);
+				
 		foreach ($quads as $q)
 		{
 			$row = array();
