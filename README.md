@@ -48,7 +48,6 @@ graph TD
 CreativeWork -- funding --> wg(Grant)
 wg -- funder --> Organization
 CreativeWork -- funder --> Organization
-Organization -- parentOrganization --> P(Parent)
 ```
 
 For funding, consider using blank nodes for funders without DOIs. Yes, blank nodes can be problematic, but this would seem a good use case.
