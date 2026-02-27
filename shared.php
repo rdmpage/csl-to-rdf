@@ -247,6 +247,10 @@ function csl_to_quads($csl, $options = [])
 				$type = 'CreativeWork';
 				break;
 				
+			case 'thesis':
+				$type = 'Thesis';
+				break;
+				
 			default:
 				$type = 'CreativeWork';
 				break;	
@@ -260,7 +264,7 @@ function csl_to_quads($csl, $options = [])
 		);	
 		
 		
-	// prerint  --------------------------------------------------------------------------
+	// preprint  --------------------------------------------------------------------------
 	// relationship between this work and others, e.g. preprint
 	if (isset($csl->relation))
 	{
@@ -413,7 +417,8 @@ function csl_to_quads($csl, $options = [])
 			}
 			else
 			{
-				// treat as date
+				// treat as date, triples stores can do date queries much faster
+				// if we use date type
 				$quads[] = array(
 					$s, 
 					'http://schema.org/datePublished', 

@@ -1,9 +1,33 @@
 <?php
 
+// Given a list of URLs fetch corresponding record from local database using API call,
+// convert returned CSL-JSON to RDF
+
 require_once (dirname(__FILE__) . '/shared.php');
 
-//----------------------------------------------------------------------------------------
+$filename = '';
+if ($argc < 2)
+{
+	echo "Usage: " . basename(__FILE__) . " <filename>\n";
+	exit(1);
+}
+else
+{
+	$filename = $argv[1];
+}
 
+
+$urls = array();
+
+$file_handle = fopen($filename, "r");
+while (!feof($file_handle)) 
+{
+	$url = trim(fgets($file_handle));
+	
+	$urls[] = $url;
+}	
+
+/*
 $urls=array(
 'https://dl.ndl.go.jp/pid/10366723',
 //'http://koreascience.or.kr/article/JAKO198611920826142.page',
@@ -11,6 +35,7 @@ $urls=array(
 'http://publication.nhmus.hu/folent/cikkreszletes.php?idhoz=6134',
 'https://dl.ndl.go.jp/pid/10366562',
 );
+*/
 
 $force = false;
 

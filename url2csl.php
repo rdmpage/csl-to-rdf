@@ -1,49 +1,48 @@
 <?php
 
-require_once (dirname(__FILE__) . '/shared.php');
+// Given a list of URLs fetch HTML, extract metadata from <meta> tags, convert to
+// CSL-JSON, then convert to RDF
 
+require_once (dirname(__FILE__) . '/shared.php');
 require_once (dirname(__FILE__) . '/HtmlDomParser.php');
 use Sunra\PhpSimple\HtmlDomParser;
 
+// Given a list of DOIs use content negotiation to fetch CSL-JSON then convert to RDF
 
-//----------------------------------------------------------------------------------------
+require_once (dirname(__FILE__) . '/shared.php');
 
-$urls=array(
-'https://elib.sfu-kras.ru/handle/2311/110837',
-'https://journal.lib.uoguelph.ca/index.php/eso/article/view/6846',
-'https://www.biotaxa.org/AEMNP/article/view/26282',
-'https://journals.flvc.org/troplep/article/view/104884',
-'http://et-online.nu/index.php/contents/article/view/45',
-);
+$filename = '';
+if ($argc < 2)
+{
+	echo "Usage: " . basename(__FILE__) . " <filename>\n";
+	exit(1);
+}
+else
+{
+	$filename = $argv[1];
+}
 
-$urls = array(
-'https://hdl.handle.net/10400.5/7829',
-'http://et-online.nu/index.php/contents/article/view/45',
-'https://journal.lib.uoguelph.ca/index.php/eso/article/view/6846', // actually has a DOI
-'https://www.biotaxa.org/AEMNP/article/view/26282',
-);
 
-$urls = array(
-'https://ttfnc.org/livingworld/index.php/lwj/article/view/rogy_et_al_2024',
-//'https://hdl.handle.net/10037/28098', // blocked
-);
+$urls = array();
 
-$urls = array(
-'http://hdl.handle.net/1854/LU-01J28WHJV9QA7T48ZEV1494R9V'
-);
-
+$file_handle = fopen($filename, "r");
+while (!feof($file_handle)) 
+{
+	$url = trim(fgets($file_handle));
+	
+	$urls[] = $url;
+}	
 
 $force = false;
 
 $debug = false;
-$debug = true;
+//$debug = true;
 
 $count = 1;
 
 foreach ($urls as $url)
 {
 	// domain
-	
 	$domain = parse_url($url, PHP_URL_HOST);
 	
 	$cache_dir = dirname(__FILE__). '/url/' . $domain;
@@ -159,11 +158,16 @@ foreach ($urls as $url)
 					break;					
 
 				case 'citation_date':
-				case 'citation_publication_date':
+				case 'citation_publication_date':				
 					$csl->issued = new stdclass;
 					$csl->issued->{'date-parts'} = [];
 					
-				   if (preg_match("/(?<year>[0-9]{4})\/(?<month>[0-9]{1,2})\/(?<day>[0-9]{1,2})$/", $meta->content, $matches))
+					if ($debug)
+					{
+						echo "|" . $meta->content . "|\n";
+					}
+										
+				   if (preg_match("/(?<year>[0-9]{4})[\/|-](?<month>[0-9]{1,2})[\/|-](?<day>[0-9]{1,2})$/", $meta->content, $matches))
 				   {   
 						$csl->issued->{'date-parts'}[0] = array(
 							(Integer)$matches['year'],
@@ -171,11 +175,24 @@ foreach ($urls as $url)
 							(Integer)$matches['day']
 							);             
 				   }
-				   if (preg_match("/(?<year>[0-9]{4})$/", $meta->content, $matches))
+				   if (preg_match("/^(?<year>[0-9]{4})-(?<month>[0-9]{1,2})$/", $meta->content, $matches))
+				   {   
+						$csl->issued->{'date-parts'}[0] = array(
+							(Integer)$matches['year'],
+							(Integer)$matches['month'],
+							);             
+				   }
+				   if (preg_match("/^(?<year>[0-9]{4})$/", $meta->content, $matches))
 				   {   
 						$csl->issued->{'date-parts'}[0] = array(
 							(Integer)$matches['year']
 							);             
+				   }
+				   
+				   if (0)
+				   {
+				   	print_r($csl->issued->{'date-parts'});
+				   	exit();
 				   }
 				   break;	   
 						
@@ -194,7 +211,25 @@ foreach ($urls as $url)
 				case 'citation_abstract':
 					$csl->abstract = strip_tags(html_entity_decode($meta->content, ENT_QUOTES | ENT_HTML5, 'UTF-8'));
 					break;
-			
+					
+				case 'citation_dissertation_institution';
+				case 'citation_dissertation_name';
+					$csl->type = 'thesis';
+					break;
+
+				case 'DC.type':
+					switch ($meta->content)
+					{
+						case 'Doctoral Thesis':
+						case 'info:eu-repo/semantics/doctoralThesis';
+							$csl->type = 'thesis';
+							break;
+							
+						default:
+							break;
+					}
+					break;
+
 				default:
 					break;
 			}
@@ -212,6 +247,11 @@ foreach ($urls as $url)
 		if (is_array($csl))
 		{
 			$csl = $csl[0];
+		}
+		
+		if ($debug)
+		{
+			print_r($csl);
 		}
 		
 		echo "# $url\n";
