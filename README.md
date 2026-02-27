@@ -2,57 +2,14 @@
 
 Convert CSL-JSON to RDF using terms from [schema.org](https://schema.org).
 
-```
-rpage@Rodericks-MacBook-Pro oxigraph % oxigraph load --location . --file ../../csl-to-rdf/g.nt
-Error while loading file ../../csl-to-rdf/g.nt: Parser error between at line 74498 between columns 75 and column 150: Invalid IRI percent encoding '%jf'
-rpage@Rodericks-MacBook-Pro oxigraph % oxigraph load --location . --file ../../csl-to-rdf/g.nt
-Error while loading file ../../csl-to-rdf/g.nt: Parser error between at line 74502 between columns 75 and column 127: Invalid IRI percent encoding '%ja'
-rpage@Rodericks-MacBook-Pro oxigraph % oxigraph load --location . --file ../../csl-to-rdf/g.nt
-Error while loading file ../../csl-to-rdf/g.nt: Parser error between at line 88007 between columns 196 and column 198: Unexpected escape character '\D'
-rpage@Rodericks-MacBook-Pro oxigraph % oxigraph load --location . --file ../../csl-to-rdf/g.nt
-Error while loading file ../../csl-to-rdf/g.nt: Parser error between at line 403544 between columns 185 and column 187: Unexpected escape character '\ '
-rpage@Rodericks-MacBook-Pro oxigraph % oxigraph load --location . --file ../../csl-to-rdf/g.nt
-Error while loading file ../../csl-to-rdf/g.nt: Parser error between at line 1508923 between columns 72 and column 108: Invalid IRI code point '|'
-rpage@Rodericks-MacBook-Pro oxigraph % oxigraph load --location . --file ../../csl-to-rdf/g.nt
-Error while loading file ../../csl-to-rdf/g.nt: Parser error between at line 1571671 between columns 94 and column 96: Unexpected escape character '\i'
-rpage@Rodericks-MacBook-Pro oxigraph % oxigraph load --location . --file ../../csl-to-rdf/g.nt
-Error while loading file ../../csl-to-rdf/g.nt: Parser error between at line 1571743 between columns 162 and column 164: Unexpected escape character '\i'
-rpage@Rodericks-MacBook-Pro oxigraph % oxigraph load --location . --file ../../csl-to-rdf/g.nt
-Error while loading file ../../csl-to-rdf/g.nt: Parser error between at line 1571753 between columns 74 and column 76: Unexpected escape character '\v'
-rpage@Rodericks-MacBook-Pro oxigraph % oxigraph load --location . --file ../../csl-to-rdf/g.nt
-Error while loading file ../../csl-to-rdf/g.nt: Parser error between at line 1677174 between columns 126 and column 128: Unexpected escape character '\x'
-rpage@Rodericks-MacBook-Pro oxigraph % oxigraph load --location . --file ../../csl-to-rdf/g.nt
-Error while loading file ../../csl-to-rdf/g.nt: Parser error between at line 1917894 between columns 229 and column 231: Unexpected escape character '\T'
-rpage@Rodericks-MacBook-Pro oxigraph % oxigraph load --location . --file ../../csl-to-rdf/g.nt
-Error while loading file ../../csl-to-rdf/g.nt: Parser error between at line 2002438 between columns 100 and column 101: Invalid UTF-8: invalid utf-8 sequence of 2 bytes from index 27
-rpage@Rodericks-MacBook-Pro oxigraph % oxigraph load --location . --file ../../csl-to-rdf/g.nt
-Error while loading file ../../csl-to-rdf/g.nt: Parser error between at line 2002439 between columns 28 and column 29: Invalid UTF-8: invalid utf-8 sequence of 2 bytes from index 27
-rpage@Rodericks-MacBook-Pro oxigraph % oxigraph load --location . --file ../../csl-to-rdf/g.nt
-Error while loading file ../../csl-to-rdf/g.nt: Parser error between at line 2107676 between columns 133 and column 135: Unexpected escape character '\['
-rpage@Rodericks-MacBook-Pro oxigraph % oxigraph load --location . --file ../../csl-to-rdf/g.nt
-Error while loading file ../../csl-to-rdf/g.nt: Parser error between at line 2160579 between columns 108 and column 110: Unexpected escape character '\>'
-rpage@Rodericks-MacBook-Pro oxigraph % oxigraph load --location . --file ../../csl-to-rdf/g.nt
-Error while loading file ../../csl-to-rdf/g.nt: Parser error between at line 2206846 between columns 74 and column 121: Invalid IRI code point '"'
-rpage@Rodericks-MacBook-Pro oxigraph % oxigraph load --location . --file ../../csl-to-rdf/g.nt
-Error while loading file ../../csl-to-rdf/g.nt: Parser error between at line 2209877 between columns 108 and column 109: Invalid UTF-8: invalid utf-8 sequence of 2 bytes from index 34
-rpage@Rodericks-MacBook-Pro oxigraph % oxigraph load --location . --file ../../csl-to-rdf/g.nt
-Error while loading file ../../csl-to-rdf/g.nt: Parser error between at line 2259232 between columns 118 and column 119: Invalid UTF-8: invalid utf-8 sequence of 2 bytes from index 51
-rpage@Rodericks-MacBook-Pro oxigraph % oxigraph load --location . --file ../../csl-to-rdf/g.nt
-Error while loading file ../../csl-to-rdf/g.nt: Parser error between at line 2259233 between columns 52 and column 53: Invalid UTF-8: invalid utf-8 sequence of 2 bytes from index 51
-rpage@Rodericks-MacBook-Pro oxigraph % oxigraph load --location . --file ../../csl-to-rdf/g.nt
-Error while loading file ../../csl-to-rdf/g.nt: Parser error between at line 2259566 between columns 109 and column 110: Invalid UTF-8: invalid utf-8 sequence of 2 bytes from index 42
-rpage@Rodericks-MacBook-Pro oxigraph % oxigraph load --location . --file ../../csl-to-rdf/g.nt
-Error while loading file ../../csl-to-rdf/g.nt: Parser error between at line 2272511 between columns 1561 and column 1562: Unexpected escape character '\ï'
-```
-
 
 ## Design considerations
 
 ### Funding
 
-There are examples at https://schema.org/Grant
+There are examples at [https://schema.org/Grant](https://schema.org/Grant).
 
-We have information on the grant and the funding agency
+If we have information on the grant and the funding agency:
 
 ```
 {
@@ -71,7 +28,7 @@ We have information on the grant and the funding agency
 }
 ```
 
-We know the funder but don’t know the grant.
+We know the funder but don’t know the grant:
 
 ```
 {
@@ -94,10 +51,14 @@ CreativeWork -- funder --> Organization
 Organization -- parentOrganization --> P(Parent)
 ```
 
-For funding consider using blank nodes for funders without DOIs. Yes blank nodes can be problematic, but this would seem a good use case.
+For funding, consider using blank nodes for funders without DOIs. Yes, blank nodes can be problematic, but this would seem a good use case.
 
 ### Dates
 
-If we want sensible query performance then schema:datePublished should use xsd (`http://www.w3.org/2001/XMLSchema#`) date types, such as `xsd:date`, `xsd:gYear`, and `xsd:gYearMonth`. This enables us readily query by years, etc. 
+If we want sensible query performance from a triplestore, then `schema:datePublished` should use `xsd` (`http://www.w3.org/2001/XMLSchema#`) date types, such as `xsd:date`, `xsd:gYear`, and `xsd:gYearMonth`. This enables us to readily query by years, etc. 
+
+### CSL-JSON and displaying references
+
+Bibliographic references are best displayed using Citeproc to transform CSL-JSON, e.g. [Citation.js](https://citation.js.org). Rather than storing all the bibliographic details in RDF and bundling that into CSL-JSON, I store a CSL-JSON string as a [schema:encoding](https://schema.org/encoding). Hence, a client can take the JSON string and display the bibliographic object in whatever citation format they prefer (e.g., APA, BibTeX, RIS, etc.).
 
 

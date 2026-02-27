@@ -738,17 +738,55 @@ function csl_to_quads($csl, $options = [])
 	
 	// CSL for display -------------------------------------------------------------------	
 	$cleaned_csl = simplify_csl($csl);
-	$text = json_encode($cleaned_csl, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
-		
-	$text = str_replace(['\\', '"'], ['\\\\', '\\"'], $text);
 	
+	$text = json_encode($cleaned_csl, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);			
+	$text = str_replace(['\\', '"'], ['\\\\', '\\"'], $text);		
 	$o = '"' .  $text  . '"';
 	
-	$quads[] = array(
-		$s, 
-		'http://schema.org/description', 
-		$o
-		);
+	if (0)
+	{		
+		// CSL-JSON as a description
+		
+		$quads[] = array(
+			$s, 
+			'http://schema.org/description', 
+			$o
+			);
+	}
+	else
+	{
+		// CSL-JSON as an encoding
+		
+		// blank node
+		$encoding_id = '_:' . $cuid->cuid();
+		
+		// type 
+		$quads[] = array(
+			$encoding_id, 
+			'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 
+			'http://schema.org/MediaObject'				
+			);		
+							
+		// encoding MIME type
+		$quads[] = array(
+			$encoding_id, 
+			'http://schema.org/encodingFormat',
+			'"application/vnd.citationstyles.csl+json"'
+			);
+			
+		// JSON string
+		$quads[] = array(
+			$encoding_id, 
+			'http://schema.org/text',
+			$o			
+			);
+
+		$quads[] = array(
+			$s, 
+			'http://schema.org/encoding', 
+			$encoding_id
+			);
+	}
 	
 
 	return $quads;

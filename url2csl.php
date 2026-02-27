@@ -84,6 +84,11 @@ foreach ($urls as $url)
 	if ($dom)
 	{	
 		$csl = new stdclass;
+		
+		if (preg_match('/handle.net\/(.*)$/', $url, $m))
+		{
+			$csl->URL = 'https://hdl.handle.net/' . $m[1];
+		}
 			
 		// meta
 		foreach ($dom->find('meta') as $meta)
@@ -101,7 +106,10 @@ foreach ($urls as $url)
 					
 				case 'citation_abstract_html_url':
 				case 'eprints.official_url':
-					$csl->URL = $meta->content;
+					if (!isset($csl->URL))
+					{
+						$csl->URL = $meta->content;
+					}
 					break;
 
 				case 'citation_pdf_url':
@@ -211,8 +219,17 @@ foreach ($urls as $url)
 				case 'citation_abstract':
 					$csl->abstract = strip_tags(html_entity_decode($meta->content, ENT_QUOTES | ENT_HTML5, 'UTF-8'));
 					break;
+
+				case 'DC.Publisher':
+				case 'DC.publisher':
+					$csl->publisher = $meta->content;
+					break;
 					
 				case 'citation_dissertation_institution';
+					$csl->publisher = $meta->content;
+					$csl->type = 'thesis';
+					break;
+					
 				case 'citation_dissertation_name';
 					$csl->type = 'thesis';
 					break;

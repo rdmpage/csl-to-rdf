@@ -4,7 +4,7 @@
 <dict>
 	<key>EmbeddedEditorHidden:rpage</key>
 	<false/>
-	<key>ExpandedEditorWidth:rpage:displays([(0, 0), (1512, 982)])</key>
+	<key>ExpandedEditorWidth:rpage:displays([(0, 0), (1512, 982)]:[(-1600, 0), (1600, 900)])</key>
 	<integer>657</integer>
 	<key>ExpandedItems:rpage</key>
 	<array>
@@ -53,42 +53,6 @@
 		<dict>
 			<key>BookmarkData</key>
 			<data>
-			Ym9vayQDAAAAAAQQMAAAAASvo5vqYVBOg6SZ0bfceHYk0yNhbT60
-			DDivSYcmF3CgFAIAAAQAAAADAwAAAAgAKAUAAAABAQAAVXNlcnMA
-			AAAFAAAAAQEAAHJwYWdlAAAACwAAAAEBAABEZXZlbG9wbWVudAAK
-			AAAAAQEAAGNzbC10by1yZGYAAAoAAAABAQAAc2hhcmVkLnBocAAA
-			FAAAAAEGAAAQAAAAIAAAADAAAABEAAAAWAAAAAgAAAAEAwAAhFwA
-			AAAAAAAIAAAABAMAAJbGAwAAAAAACAAAAAQDAABZKSUAAAAAAAgA
-			AAAEAwAAPMIL9AAAAAAIAAAABAMAAOjCC/QAAAAAFAAAAAEGAACI
-			AAAAmAAAAKgAAAC4AAAAyAAAAAgAAAAABAAAQcdsaO4Wd2gYAAAA
-			AQIAAAEAAAAAAAAADwAAAAAAAAAAAAAAAAAAAAgAAAAEAwAAAwAA
-			AAAAAAAEAAAAAwMAAPUBAAAIAAAAAQkAAGZpbGU6Ly8vDAAAAAEB
-			AABNYWNpbnRvc2ggSEQIAAAABAMAAACQgpbnAAAACAAAAAAEAABB
-			xnee2oAAACQAAAABAQAARUVEQkM0OTUtREY1Mi00NTZBLUI0MzEt
-			RkI2MDdCRjA0QUQxGAAAAAECAACBAAAAAQAAAO8TAAABAAAAAAAA
-			AAAAAAABAAAAAQEAAC8AAAAAAAAAAQUAABoAAAABAQAATlNVUkxE
-			b2N1bWVudElkZW50aWZpZXJLZXkAAAQAAAADAwAAL0Q0ANgAAAD+
-			////AQAAAAAAAAARAAAABBAAAGwAAAAAAAAABRAAANgAAAAAAAAA
-			EBAAAAQBAAAAAAAAQBAAAPQAAAAAAAAAAiAAANABAAAAAAAABSAA
-			AEABAAAAAAAAECAAAFABAAAAAAAAESAAAIQBAAAAAAAAEiAAAGQB
-			AAAAAAAAEyAAAHQBAAAAAAAAICAAALABAAAAAAAAMCAAANwBAAAA
-			AAAAAcAAACQBAAAAAAAAEcAAACAAAAAAAAAAEsAAADQBAAAAAAAA
-			ENAAAAQAAAAAAAAA5AEAgAgCAAAAAAAA
-			</data>
-			<key>FileURL</key>
-			<string>file:///Users/rpage/Development/csl-to-rdf/shared.php</string>
-			<key>HasSecurityScope</key>
-			<true/>
-			<key>RelativePath</key>
-			<string>./shared.php</string>
-			<key>TypeID</key>
-			<string>_CFileLocator</string>
-			<key>Version</key>
-			<integer>1</integer>
-		</dict>
-		<dict>
-			<key>BookmarkData</key>
-			<data>
 			Ym9vayQDAAAAAAQQMAAAAAg+p6jyIqMCjeaMqLFWCS6Unev0a1le
 			hnL0bkICxslKFAIAAAQAAAADAwAAAAgAKAUAAAABAQAAVXNlcnMA
 			AAAFAAAAAQEAAHJwYWdlAAAACwAAAAEBAABEZXZlbG9wbWVudAAK
@@ -122,6 +86,42 @@
 			<key>Version</key>
 			<integer>1</integer>
 		</dict>
+		<dict>
+			<key>BookmarkData</key>
+			<data>
+			Ym9vayQDAAAAAAQQMAAAAASvo5vqYVBOg6SZ0bfceHYk0yNhbT60
+			DDivSYcmF3CgFAIAAAQAAAADAwAAAAgAKAUAAAABAQAAVXNlcnMA
+			AAAFAAAAAQEAAHJwYWdlAAAACwAAAAEBAABEZXZlbG9wbWVudAAK
+			AAAAAQEAAGNzbC10by1yZGYAAAoAAAABAQAAc2hhcmVkLnBocAAA
+			FAAAAAEGAAAQAAAAIAAAADAAAABEAAAAWAAAAAgAAAAEAwAAhFwA
+			AAAAAAAIAAAABAMAAJbGAwAAAAAACAAAAAQDAABZKSUAAAAAAAgA
+			AAAEAwAAPMIL9AAAAAAIAAAABAMAAOjCC/QAAAAAFAAAAAEGAACI
+			AAAAmAAAAKgAAAC4AAAAyAAAAAgAAAAABAAAQcdsaO4Wd2gYAAAA
+			AQIAAAEAAAAAAAAADwAAAAAAAAAAAAAAAAAAAAgAAAAEAwAAAwAA
+			AAAAAAAEAAAAAwMAAPUBAAAIAAAAAQkAAGZpbGU6Ly8vDAAAAAEB
+			AABNYWNpbnRvc2ggSEQIAAAABAMAAACQgpbnAAAACAAAAAAEAABB
+			xnee2oAAACQAAAABAQAARUVEQkM0OTUtREY1Mi00NTZBLUI0MzEt
+			RkI2MDdCRjA0QUQxGAAAAAECAACBAAAAAQAAAO8TAAABAAAAAAAA
+			AAAAAAABAAAAAQEAAC8AAAAAAAAAAQUAABoAAAABAQAATlNVUkxE
+			b2N1bWVudElkZW50aWZpZXJLZXkAAAQAAAADAwAAL0Q0ANgAAAD+
+			////AQAAAAAAAAARAAAABBAAAGwAAAAAAAAABRAAANgAAAAAAAAA
+			EBAAAAQBAAAAAAAAQBAAAPQAAAAAAAAAAiAAANABAAAAAAAABSAA
+			AEABAAAAAAAAECAAAFABAAAAAAAAESAAAIQBAAAAAAAAEiAAAGQB
+			AAAAAAAAEyAAAHQBAAAAAAAAICAAALABAAAAAAAAMCAAANwBAAAA
+			AAAAAcAAACQBAAAAAAAAEcAAACAAAAAAAAAAEsAAADQBAAAAAAAA
+			ENAAAAQAAAAAAAAA5AEAgAgCAAAAAAAA
+			</data>
+			<key>FileURL</key>
+			<string>file:///Users/rpage/Development/csl-to-rdf/shared.php</string>
+			<key>HasSecurityScope</key>
+			<true/>
+			<key>RelativePath</key>
+			<string>./shared.php</string>
+			<key>TypeID</key>
+			<string>_CFileLocator</string>
+			<key>Version</key>
+			<integer>1</integer>
+		</dict>
 	</array>
 	<key>OpenDocumentsExpanded</key>
 	<true/>
@@ -135,7 +135,7 @@
 	<array>
 		<dict>
 			<key>Date</key>
-			<date>2026-02-27T12:48:35Z</date>
+			<date>2026-02-27T14:18:39Z</date>
 			<key>Location</key>
 			<dict>
 				<key>BookmarkData</key>
@@ -178,7 +178,7 @@
 		</dict>
 		<dict>
 			<key>Date</key>
-			<date>2026-02-27T12:48:35Z</date>
+			<date>2026-02-27T14:18:39Z</date>
 			<key>Location</key>
 			<dict>
 				<key>BookmarkData</key>
@@ -221,7 +221,7 @@
 		</dict>
 		<dict>
 			<key>Date</key>
-			<date>2026-02-27T12:48:35Z</date>
+			<date>2026-02-27T14:18:39Z</date>
 			<key>Location</key>
 			<dict>
 				<key>BookmarkData</key>
@@ -264,7 +264,7 @@
 		</dict>
 		<dict>
 			<key>Date</key>
-			<date>2026-02-27T12:48:35Z</date>
+			<date>2026-02-27T14:18:39Z</date>
 			<key>Location</key>
 			<dict>
 				<key>BookmarkData</key>
@@ -308,7 +308,7 @@
 		</dict>
 		<dict>
 			<key>Date</key>
-			<date>2026-02-27T12:48:35Z</date>
+			<date>2026-02-27T14:18:39Z</date>
 			<key>Location</key>
 			<dict>
 				<key>BookmarkData</key>
@@ -352,7 +352,7 @@
 		</dict>
 		<dict>
 			<key>Date</key>
-			<date>2026-02-27T12:48:35Z</date>
+			<date>2026-02-27T14:18:39Z</date>
 			<key>Location</key>
 			<dict>
 				<key>BookmarkData</key>
@@ -396,7 +396,7 @@
 		</dict>
 		<dict>
 			<key>Date</key>
-			<date>2026-02-27T12:48:35Z</date>
+			<date>2026-02-27T14:18:39Z</date>
 			<key>Location</key>
 			<dict>
 				<key>BookmarkData</key>
@@ -440,7 +440,7 @@
 		</dict>
 		<dict>
 			<key>Date</key>
-			<date>2026-02-27T12:48:35Z</date>
+			<date>2026-02-27T14:18:39Z</date>
 			<key>Location</key>
 			<dict>
 				<key>BookmarkData</key>
@@ -484,7 +484,7 @@
 		</dict>
 		<dict>
 			<key>Date</key>
-			<date>2026-02-27T12:48:35Z</date>
+			<date>2026-02-27T14:18:39Z</date>
 			<key>Location</key>
 			<dict>
 				<key>BookmarkData</key>
@@ -528,7 +528,7 @@
 		</dict>
 		<dict>
 			<key>Date</key>
-			<date>2026-02-27T12:48:35Z</date>
+			<date>2026-02-27T14:18:39Z</date>
 			<key>Location</key>
 			<dict>
 				<key>BookmarkData</key>
@@ -572,7 +572,7 @@
 		</dict>
 		<dict>
 			<key>Date</key>
-			<date>2026-02-27T12:48:35Z</date>
+			<date>2026-02-27T14:18:39Z</date>
 			<key>Location</key>
 			<dict>
 				<key>BookmarkData</key>
@@ -616,7 +616,7 @@
 		</dict>
 		<dict>
 			<key>Date</key>
-			<date>2026-02-27T12:48:35Z</date>
+			<date>2026-02-27T14:18:39Z</date>
 			<key>Location</key>
 			<dict>
 				<key>BookmarkData</key>
@@ -660,7 +660,7 @@
 		</dict>
 		<dict>
 			<key>Date</key>
-			<date>2026-02-27T12:48:35Z</date>
+			<date>2026-02-27T14:18:39Z</date>
 			<key>Location</key>
 			<dict>
 				<key>BookmarkData</key>
@@ -705,7 +705,7 @@
 		</dict>
 		<dict>
 			<key>Date</key>
-			<date>2026-02-27T12:48:35Z</date>
+			<date>2026-02-27T14:18:39Z</date>
 			<key>Location</key>
 			<dict>
 				<key>BookmarkData</key>
@@ -749,7 +749,7 @@
 		</dict>
 		<dict>
 			<key>Date</key>
-			<date>2026-02-27T12:48:35Z</date>
+			<date>2026-02-27T14:18:39Z</date>
 			<key>Location</key>
 			<dict>
 				<key>BookmarkData</key>
@@ -802,7 +802,7 @@
 	<false/>
 	<key>ViewSplitterPosition:rpage</key>
 	<real>0.23604650795459747</real>
-	<key>WindowFrame:rpage:displays([(0, 0), (1512, 982)])</key>
-	<string>rect(165,364,967,1224)</string>
+	<key>WindowFrame:rpage:displays([(0, 0), (1512, 982)]:[(-1600, 0), (1600, 900)])</key>
+	<string>rect(180,643,982,1503)</string>
 </dict>
 </plist>
