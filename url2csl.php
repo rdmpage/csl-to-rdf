@@ -7,10 +7,6 @@ require_once (dirname(__FILE__) . '/shared.php');
 require_once (dirname(__FILE__) . '/HtmlDomParser.php');
 use Sunra\PhpSimple\HtmlDomParser;
 
-// Given a list of DOIs use content negotiation to fetch CSL-JSON then convert to RDF
-
-require_once (dirname(__FILE__) . '/shared.php');
-
 $filename = '';
 if ($argc < 2)
 {
@@ -21,7 +17,6 @@ else
 {
 	$filename = $argv[1];
 }
-
 
 $urls = array();
 
@@ -72,7 +67,6 @@ foreach ($urls as $url)
     	$rand = rand(100000, 3000000);
     	echo "\n# ...sleeping for " . round(($rand / 1000000),2) . ' seconds' . "\n\n";
     	usleep($rand);		
-			
 	}
 	
 	$html = file_get_contents($filename);
@@ -95,7 +89,7 @@ foreach ($urls as $url)
 		{
 			if ($debug)
 			{
-				echo $meta->name . ' ' . $meta->content . "\n";
+				fwrite(STDERR, $meta->name . ' ' . $meta->content . "\n");
 			}
 			
 			switch ($meta->name)
@@ -199,7 +193,7 @@ foreach ($urls as $url)
 				   
 				   if (0)
 				   {
-				   	print_r($csl->issued->{'date-parts'});
+				   	fwrite(STDERR, print_r($csl->issued->{'date-parts'}, true));
 				   	exit();
 				   }
 				   break;	   
@@ -254,23 +248,22 @@ foreach ($urls as $url)
 		
 		if ($debug)
 		{
-			print_r($csl);
+			fwrite(STDERR, print_r($csl, true));
 		}
 	}
-	
+
 	if ($csl)
 	{
-	
 		if (is_array($csl))
 		{
 			$csl = $csl[0];
 		}
-		
+
 		if ($debug)
 		{
-			print_r($csl);
+			fwrite(STDERR, print_r($csl, true));
 		}
-		
+
 		echo "# $url\n";
 				
 		$quads = csl_to_quads($csl);
@@ -294,9 +287,7 @@ foreach ($urls as $url)
 		}	
 		
 		echo "\n";
-		
 	}
-
 }
 
 ?>

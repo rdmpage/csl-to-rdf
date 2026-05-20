@@ -68,7 +68,7 @@ foreach ($urls as $url)
 	{	
 		$get_url = 'http://localhost/microcitation-lite/api/api.php?id=' . urlencode($url);
 		
-		echo $get_url . "\n";
+		fwrite(STDERR, $get_url . "\n");
 		$json = get($get_url);
 		file_put_contents($filename, $json);
 	}
@@ -85,7 +85,7 @@ foreach ($urls as $url)
 		
 		if (0)
 		{
-			print_r($csl);
+			fwrite(STDERR, print_r($csl, true));
 		}
 		
 		echo "# $url\n";

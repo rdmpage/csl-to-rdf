@@ -90,7 +90,7 @@ foreach ($dois as $doi)
 		
 		if ($debug)
 		{
-			print_r($csl);
+			fwrite(STDERR, print_r($csl, true));
 		}
 		
 		$quads = csl_to_quads($csl, $options);

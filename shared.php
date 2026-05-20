@@ -681,10 +681,11 @@ function csl_to_quads($csl, $options = [])
 		if (is_array($csl->license))
 		{
 			foreach ($csl->license as $license)
-
-			if (isset($license->URL))
 			{
-				$license_urls[] = $license->URL;
+				if (isset($license->URL))
+				{
+					$license_urls[] = $license->URL;
+				}
 			}
 		}
 		

@@ -1,0 +1,199 @@
+# SHACL shapes for the RDF emitted by csl-to-rdf.
+#
+# Validate with pyshacl (https://github.com/RDFLib/pySHACL):
+#
+#   php doi2csl.php dois.txt | pyshacl -df nt -s shapes.ttl -sf turtle -f human -
+#
+# These shapes describe what the converter emits today. They are intentionally
+# strict on shape (cardinality, datatypes, node kinds) and loose on identity —
+# blank-node entities (funders without DOI, ORCID-less authors, etc.) are
+# allowed wherever IRIs are. See DESIGN.md for the open questions on
+# skolemization and ordering.
+
+@prefix sh:     <http://www.w3.org/ns/shacl#> .
+@prefix schema: <http://schema.org/> .
+@prefix xsd:    <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdf:    <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix :       <https://w3id.org/csl-to-rdf/shapes#> .
+
+
+# --- Work --------------------------------------------------------------------
+# Every typed work (ScholarlyArticle, Book, Chapter, Thesis, or the
+# CreativeWork fallback) must be an http(s) IRI, must have a name, and may
+# carry exactly one xsd-typed publication date and exactly one CSL encoding.
+
+:WorkShape
+    a sh:NodeShape ;
+    sh:targetClass schema:ScholarlyArticle, schema:Book, schema:Chapter,
+                   schema:Thesis, schema:CreativeWork ;
+
+    sh:nodeKind sh:IRI ;
+    sh:pattern  "^https?://" ;
+    sh:message  "Work IRI must be an http(s) URI." ;
+
+    sh:property [
+        sh:path     schema:name ;
+        sh:minCount 1 ;
+        sh:nodeKind sh:Literal ;
+        sh:message  "Work must have at least one schema:name." ;
+    ] ;
+
+    sh:property [
+        sh:path     schema:datePublished ;
+        sh:maxCount 1 ;
+        sh:or ( [ sh:datatype xsd:date ]
+                [ sh:datatype xsd:gYearMonth ]
+                [ sh:datatype xsd:gYear ] ) ;
+        sh:message  "schema:datePublished must use xsd:date, xsd:gYearMonth, or xsd:gYear." ;
+    ] ;
+
+    sh:property [
+        sh:path     schema:abstract ;
+        sh:maxCount 1 ;
+        sh:nodeKind sh:Literal ;
+    ] ;
+
+    sh:property [
+        sh:path     schema:license ;
+        sh:nodeKind sh:IRI ;
+    ] ;
+
+    sh:property [
+        sh:path     schema:creator ;
+        sh:nodeKind sh:BlankNodeOrIRI ;
+    ] ;
+
+    sh:property [
+        sh:path     schema:funder ;
+        sh:nodeKind sh:BlankNodeOrIRI ;
+    ] ;
+
+    sh:property [
+        sh:path     schema:funding ;
+        sh:nodeKind sh:BlankNodeOrIRI ;
+    ] ;
+
+    sh:property [
+        sh:path     schema:publisher ;
+        sh:nodeKind sh:BlankNodeOrIRI ;
+        sh:maxCount 1 ;
+    ] ;
+
+    sh:property [
+        sh:path     schema:citation ;
+        sh:nodeKind sh:BlankNodeOrIRI ;
+    ] ;
+
+    sh:property [
+        sh:path     schema:encoding ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:nodeKind sh:BlankNodeOrIRI ;
+        sh:message  "Every work should carry exactly one schema:encoding pointing at the CSL-JSON MediaObject." ;
+    ] .
+
+
+# --- Person ------------------------------------------------------------------
+# An author is either a literal name (CSL 'literal' form) or a structured
+# given+family pair. Mixing both, or having only one of given/family, is an
+# anomaly worth flagging.
+
+:PersonShape
+    a sh:NodeShape ;
+    sh:targetClass schema:Person ;
+    sh:severity sh:Warning ;
+
+    sh:xone (
+        [
+            sh:property [
+                sh:path     schema:name ;
+                sh:minCount 1 ;
+                sh:maxCount 1 ;
+                sh:nodeKind sh:Literal ;
+            ] ;
+            sh:property [ sh:path schema:givenName  ; sh:maxCount 0 ] ;
+            sh:property [ sh:path schema:familyName ; sh:maxCount 0 ] ;
+        ]
+        [
+            sh:property [
+                sh:path     schema:givenName ;
+                sh:minCount 1 ;
+                sh:maxCount 1 ;
+                sh:nodeKind sh:Literal ;
+            ] ;
+            sh:property [
+                sh:path     schema:familyName ;
+                sh:minCount 1 ;
+                sh:maxCount 1 ;
+                sh:nodeKind sh:Literal ;
+            ] ;
+            sh:property [ sh:path schema:name ; sh:maxCount 0 ] ;
+        ]
+    ) ;
+    sh:message "Person must have either one schema:name (literal author) or both schema:givenName and schema:familyName, but not both forms." .
+
+
+# --- Organization ------------------------------------------------------------
+# Funders and publishers. Must have a name. May or may not have a DOI as IRI;
+# blank-node organizations are allowed (see DESIGN.md).
+
+:OrganizationShape
+    a sh:NodeShape ;
+    sh:targetClass schema:Organization ;
+
+    sh:property [
+        sh:path     schema:name ;
+        sh:minCount 1 ;
+        sh:nodeKind sh:Literal ;
+        sh:message  "Organization must have schema:name." ;
+    ] .
+
+
+# --- Grant -------------------------------------------------------------------
+# A funding award. The converter mints one Grant per (funder, award-string)
+# pair. Must have exactly one identifier and exactly one funder.
+
+:GrantShape
+    a sh:NodeShape ;
+    sh:targetClass schema:Grant ;
+
+    sh:property [
+        sh:path     schema:identifier ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:nodeKind sh:Literal ;
+        sh:message  "Grant must have exactly one schema:identifier (the award string)." ;
+    ] ;
+
+    sh:property [
+        sh:path     schema:funder ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:nodeKind sh:BlankNodeOrIRI ;
+        sh:message  "Grant must link to exactly one schema:funder." ;
+    ] .
+
+
+# --- CSL-JSON encoding -------------------------------------------------------
+# Each work carries its source CSL-JSON as a schema:MediaObject with a fixed
+# encodingFormat and the JSON string in schema:text.
+
+:CslEncodingShape
+    a sh:NodeShape ;
+    sh:targetClass schema:MediaObject ;
+
+    sh:property [
+        sh:path     schema:encodingFormat ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:hasValue "application/vnd.citationstyles.csl+json" ;
+        sh:message  "CSL encoding MediaObject must declare encodingFormat 'application/vnd.citationstyles.csl+json'." ;
+    ] ;
+
+    sh:property [
+        sh:path     schema:text ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:nodeKind sh:Literal ;
+        sh:message  "CSL encoding MediaObject must carry the CSL-JSON string in schema:text." ;
+    ] .
