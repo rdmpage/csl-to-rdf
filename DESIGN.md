@@ -43,77 +43,221 @@ longer cause `Conforms: False`. A converter-side heuristic that detects
 
 ## Identity for nodes without a global identifier
 
+### Context: the graph is published
+
+This section assumes the output is loaded into a triplestore that is **online
+as part of a larger biodiversity knowledge graph, behind SPARQL and MCP
+interfaces**. That assumption drives most of what follows, and it changed
+several earlier conclusions (recorded under "Reversals" below). The short
+version: IRIs stop being an internal implementation detail and become a public
+interface that other people query, cache, federate against, and link to.
+
 ### The problem
 
 Several entities in CSL-JSON have no globally-resolvable identifier:
 
 - **Funders** without a Crossref Funder Registry DOI
-- **Grants** — never have a DOI; only an award string scoped to a funder
+- **Grants** — the award string is usually all CSL gives us
 - **Publishers** when CSL gives us a string (most of the time)
 - **The `MediaObject`** that carries the CSL-JSON `schema:encoding`
 - **Authors** without an ORCID
 - **Cited works** without a DOI (when `allcitations` is enabled)
 
 Today these are all minted as blank nodes with a fresh CUID per run
-(`shared.php`, e.g. the `_:` + `$cuid->cuid()` pattern). That works for a
-single emit-and-load pass, but has costs:
+(`shared.php`, e.g. the `_:` + `$cuid->cuid()` pattern). Behind a public
+endpoint that is not merely inelegant, it is broken:
 
-- **Not idempotent.** Re-running over the same DOI produces a different graph.
-  Diffing two runs or doing incremental updates against `registry.rdf` is
-  noisy: every grant, every publisher, every encoding looks "new" even when
-  nothing changed.
-- **No cross-work joins.** Two works funded by the same funder-without-DOI get
-  two distinct blank nodes. We can never say "show all works funded by NSF
-  programmes that lack a Funder Registry DOI" because the blank nodes do not
-  unify across works.
-- **Loader-dependent semantics.** Some triplestores rewrite blank node labels
-  on load, which makes downstream debugging harder.
+- **Blank node labels are not addressable.** They are scoped to a single result
+  set, so a client cannot take `_:b0` from one query and use it in the next.
+  `DESCRIBE`, federated `SERVICE` queries, and anything that round-trips a
+  result through another system all fail on them. An MCP agent's natural loop —
+  query, then ask a follow-up about a node in the result — is exactly the
+  pattern blank nodes prevent.
+- **Not idempotent.** Re-running over the same DOI produces a different graph,
+  so incremental updates and diffs against `registry.rdf` are pure noise.
+- **No joins.** Two works funded by the same funder-without-DOI get two
+  distinct blank nodes that never unify.
+- **Duplicates within a single work.** This is the decisive one. The same DOI
+  is described by *multiple sources* (Crossref, OpenCitations, Zenodo…). If
+  each source's rendering of an author without an ORCID mints a fresh node, one
+  paper ends up with its author list duplicated once per source.
 
-### Options
+So: **every node gets an IRI.** That part is settled; the remaining questions
+are what namespace, and what the IRIs are keyed on.
 
-1. **Status quo — fresh blank node per run, full replace.**
-   Simple. Acceptable if the workflow is always "delete the named graph for
-   this DOI, reinsert". Falls over the moment we want incremental updates or
-   cross-work analysis on these entities.
+### Namespace
 
-2. **Skolemize: mint deterministic IRIs.**
-   Replace blank nodes with IRIs derived by hashing the content that makes the
-   entity unique. RDF 1.1 reserves
-   `https://w3id.org/<our-namespace>/.well-known/genid/<hash>` for exactly
-   this. Suggested keying:
+Minted IRIs take the form:
 
-   | Entity | Keying inputs |
-   |---|---|
-   | Funder (no DOI) | normalized funder name |
-   | Grant | funder identifier + award string |
-   | Publisher (string) | normalized publisher name |
-   | CSL encoding `MediaObject` | parent work IRI (one encoding per work) |
-   | Author (no ORCID) | parent work IRI + position + given + family |
-   | Cited work (no DOI) | parent work IRI + `reference.key` if present, else hash of `unstructured` |
+```
+https://w3id.org/<kg>/id/<type>/<hash>
+```
 
-   Pros: stable across runs, joinable across works when keying is global
-   (funders, publishers), idempotent.
-   Cons: choice of keying inputs is load-bearing — too narrow and we collide
-   different entities; too wide and we re-fragment them. Author identity is
-   the worst case here: same name does not mean same person, so any cross-work
-   keying is a guess.
+where `<type>` is `person`, `organization`, `grant`, `encoding`, `work`, and
+`<kg>` is the knowledge graph's namespace — **not** `csl-to-rdf`. See "grain"
+below.
 
-3. **Persistent CUID mapping.**
-   Keep CUIDs, but store a sidecar file mapping `content_hash -> cuid` so
-   re-runs reuse the same blank node label. Solves idempotency within our
-   pipeline but not cross-work joins, and adds a stateful artifact to manage.
+- **Register the namespace on `w3id.org`.** It is a redirect service run by the
+  W3C Permanent Identifier Community Group: the whole thing is a public GitHub
+  repo (`perma-id/w3id.org`) where each namespace is a directory containing an
+  `.htaccess`. You open a PR, and once merged you control the redirect target
+  forever. The point is the indirection — the IRI survives hosting moves and
+  lapsed domains. An *unregistered* w3id path resolves to nothing, so this is a
+  real task, not a naming convention.
+- **Dereferencing is nearly free.** With a SPARQL endpoint already running, the
+  `.htaccess` can content-negotiate `/id/*` straight to a `DESCRIBE <iri>`
+  against that endpoint. Roughly ten lines of config makes every minted IRI
+  resolvable.
+- **Namespace grain: knowledge-graph level, not converter level.** If the
+  literature pipeline mints under `csl-to-rdf/` while the occurrence and
+  taxonomic pipelines mint under their own namespaces, the same funder gets a
+  different IRI per pipeline and the project spends its life reconciling its own
+  data against itself. The minting rules below should be shared infrastructure
+  that every ingest pipeline calls.
+- **Not `.well-known/genid/`.** RDF 1.1 §3.5 reserves that path for skolemized
+  blank nodes, and it carries the matching semantics: *this is a stand-in, do
+  not attach significance to it*. But a funder in a published graph is a
+  first-class queryable entity that we actively want people to link to. Minting
+  it under `genid` tells consumers not to rely on precisely the thing we are
+  inviting them to rely on.
+- **Not fragments on DOI IRIs.** `https://doi.org/10.x/y#author-1` is tempting
+  — it inherits the DOI's stability and needs no namespace — but it coins IRIs
+  inside a namespace Crossref controls, for which their content negotiation
+  defines nothing. Harmless in a private graph; in a published one it is
+  asserting definitions in someone else's space, with no way to arbitrate a
+  collision if another project mints the same fragment differently.
+- **Not `urn:uuid:` (v5) or `tag:`.** Both give deterministic global uniqueness
+  with zero infrastructure, and either would be a fine interim for a *private*
+  graph. Neither dereferences, which is most of the value in a public graph
+  with an agent interface.
 
-4. **Hybrid.** Skolemize entities where cross-work identity is plausibly
-   meaningful (funders, publishers, grants). Keep blank nodes — but mint them
-   deterministically from work IRI + position — for entities where it is not
-   (authors without ORCID, citations without DOI, encoding MediaObject). This
-   buys idempotency everywhere and cross-work joins where they are defensible.
+### Reuse before minting
 
-### Current leaning
+**Reuse identifiers that are present in the source data; do not look
+identifiers up during the build.** With millions of entities, a reconciliation
+step in the ingest path is what stops the graph ever getting built. Minting is
+the default; reconciliation is a later, additive pass.
 
-Option 4, but the keying details need to be pinned down before we commit. In
-particular: do we trust normalized publisher/funder names enough to merge
-records across works, or do we want a human-curated alias list first?
+In practice that means: Funder Registry DOIs (Crossref supplies these inline)
+and ORCIDs are reused; ROR IDs and Crossref grant DOIs generally are *not*
+present in CSL-JSON and therefore are not reused at build time, even though
+both exist and both would be better.
+
+Note for the record: the earlier claim in this file that grants never have DOIs
+was wrong. Crossref's Grant Linking System has issued grant DOIs since 2019 and
+several funders register them. Adopting them requires a lookup keyed on funder
+DOI + award string, so it belongs in the deferred reconciliation pass.
+
+### Keying
+
+Two independent decisions, deliberately kept apart because they carry very
+different risk.
+
+#### 1. Work-scoped keying — do this everywhere, no risk
+
+Key on the parent work IRI plus the normalized name. This alone eliminates the
+cross-source duplicate problem above, with no possibility of conflating two
+different entities.
+
+**`position` must not be an input to the key.** Sources disagree about author
+order and completeness — one drops a middle author, another orders them
+differently — so including position guarantees exactly the duplicates we are
+trying to remove. Position is an attribute of the node (see Authorship), not
+part of its identity. The same applies to any source or run label.
+
+#### 2. Global (cross-work) merging — tiered by entity type
+
+Merging by name *across* works is what buys "all works by this funder / this
+person". The risk is not uniform:
+
+| Entity | Scope | Keying inputs |
+|---|---|---|
+| Funder (no DOI) | **global** | normalized name |
+| Publisher (string) | **global** | normalized name |
+| Grant | **global** | funder identifier + normalized award string |
+| Person (no ORCID), distinctive name | **global** | normalized name |
+| Person (no ORCID), weak name | work-scoped | work IRI + normalized name |
+| Cited work (no DOI) | work-scoped | work IRI + `reference.key`, else hash of `unstructured` |
+| CSL encoding `MediaObject` | work-scoped | work IRI (one encoding per work) |
+
+Organization names are long, distinctive, and there are relatively few of them,
+so global merging is low-risk. Personal names are short and massively
+collision-prone: globally merging `Y. Wang` or `J. Smith` across a biodiversity
+literature corpus produces monster nodes with thousands of works spanning a
+century — a visible, embarrassing error in a public graph.
+
+**The distinctiveness gate** avoids the worst of that without any
+reconciliation: merge a person globally only when the name carries enough
+signal — at least one given-name token of two or more characters (i.e. not
+initials only) and a family name present. Initials-only names, and CSL
+`literal` names that cannot be parsed into given/family, fall back to
+work-scoped. One function, and it kills the `J. Smith` case while still merging
+`Roderic D. M. Page`.
+
+#### Normalization is load-bearing and must be versioned
+
+Every minted IRI is a hash of the normalizer's output, so changing the
+normalizer silently re-mints the entire graph. Pin it, version it, and treat a
+change as a migration.
+
+Starting definition, `norm/1`:
+
+- Unicode NFKC, then case-fold to lowercase.
+- Strip diacritics. Sources disagree about whether they survive, so stripping
+  helps cross-source matching (`Müller` / `Muller`).
+- Strip punctuation, including the periods in initials; treat hyphens as
+  spaces so `Jean-Pierre` and `Jean Pierre` agree.
+- Collapse runs of whitespace, trim.
+- Organizations only: drop a leading `the`.
+
+The hashed input string embeds the version and type so the two can never be
+confused across a migration:
+
+```
+norm/1|person|roderic d m page
+norm/1|organization|national science foundation
+norm/1|grant|https://doi.org/10.13039/100000001|1452510
+```
+
+IRI local part: first 32 hex characters of the SHA-256 of that string.
+
+### Keeping the gamble reversible
+
+The asymmetry that matters: **merging later is easy, splitting later is hard.**
+Under-merging is repaired additively with `schema:sameAs` / `skos:exactMatch`
+links, changing no existing IRI. Over-merging is repaired by minting new IRIs
+and rewriting every reference — including ones third parties have already
+cited from the public endpoint. Choosing name-based merging trades away the
+cheap-to-repair direction, which is an acceptable bet only if we can still
+reconstruct what was merged. Three cheap obligations, all at build time:
+
+1. **Keep the evidence.** Every minted node carries the raw, un-normalized
+   string it was minted from, and the source it came from. A later split is only
+   computable if we can still see what went in.
+2. **Record the normalizer version** on the graph, per the above.
+3. **Audit by query, not by curation.** Over-merges are detectable after the
+   fact without reconciling anything: nodes with implausible work counts,
+   publication spans beyond ~60 years, or authorship across unrelated subject
+   areas. That is a SPARQL query run against the finished graph — which fits a
+   build-first workflow, rather than blocking it.
+
+Provenance also argues for a **named graph per source DOI**, which gives
+"where did this triple come from" for free and allows re-ingesting a single work
+without a global rebuild. The emitter is already called `csl_to_quads`, so the
+slot exists.
+
+### Reversals
+
+Recorded so the reasoning is not re-litigated:
+
+- **Blank nodes, even deterministically labelled, are out.** Earlier drafts kept
+  them for entities where cross-work identity was implausible. Publication kills
+  that: blank nodes are not addressable in SPARQL results or federated queries.
+  Work-scoped *IRIs* give the same "no cross-work claim" semantics while
+  remaining queryable.
+- **`.well-known/genid/` and DOI fragments are out**, for the reasons under
+  "Namespace". Both were earlier recommendations; both are fine privately and
+  wrong publicly.
 
 ## Authorship
 
@@ -161,12 +305,21 @@ ingesting affiliations or corresponding-author flags.
 
 ### Identity, again
 
-If we adopt the skolemization scheme from the previous section, an author
-without an ORCID becomes an IRI keyed on `(work, position, name)`. That means
-the same author appearing on two different works is two different IRIs.
-That is wrong in principle but defensible in practice: we cannot prove they
-are the same person without an ORCID, and silently merging by name is worse
-than silently splitting.
+Superseded by the keying rules in the identity section above. Two points bear
+repeating here because they bite specifically on authors:
+
+- **`position` is not part of the key.** An earlier draft keyed authors on
+  `(work, position, name)`. That is actively wrong: sources describing the same
+  DOI disagree about author order and completeness, so including position
+  re-creates the duplicate-author-per-source problem it was meant to avoid.
+  Position is emitted as `schema:position` on the node and plays no part in its
+  identity.
+- **Merging by name is not uniformly worse than splitting.** The earlier
+  conclusion — never merge people by name — is too blunt. It is right for
+  initials-only and unparseable names, which is why those stay work-scoped. For
+  a name carrying real signal it costs us every "all works by this person"
+  query, so distinctive names merge globally, with the raw string retained and
+  the over-merge audit query as the safety net.
 
 ## Open questions
 
