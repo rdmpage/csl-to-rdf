@@ -66,18 +66,18 @@ function nice_uri($uri)
 {
 	// known errors 
 	
-	// <https://doi.org/10.3398/064.079.0101> <http://schema.org/citation> <https://doi.org/10.1899/0887-3593(2005)024\%5B0508:biomeu\%5D2.0.co;2> .
+	// <https://doi.org/10.3398/064.079.0101> <https://schema.org/citation> <https://doi.org/10.1899/0887-3593(2005)024\%5B0508:biomeu\%5D2.0.co;2> .
 	// 10.1899/0887-3593(2005)024\[0508:BIOMEU\]2.0.CO;2
 	$uri = str_replace('\[', '[', $uri);
 	$uri = str_replace('\]', ']', $uri);
 	
-	// <https://doi.org/10.1139/gen-2015-0168> <http://schema.org/citation> <https://doi.org/10.1111/j.1471-8286.2007.01678.x. pmid:> .
+	// <https://doi.org/10.1139/gen-2015-0168> <https://schema.org/citation> <https://doi.org/10.1111/j.1471-8286.2007.01678.x. pmid:> .
 	$uri = preg_replace('/\.\s+pmid:/', '', $uri);	
 	
-	// <https://doi.org/10.1007/s10531-023-02686-9> <http://schema.org/citation> <https://doi.org/10.1139/gen-2019-0226%m32502367> .
+	// <https://doi.org/10.1007/s10531-023-02686-9> <https://schema.org/citation> <https://doi.org/10.1139/gen-2019-0226%m32502367> .
 	$uri = preg_replace('/%m\d+/', '', $uri);
 	
-	// <https://doi.org/10.1071/is24059> <http://schema.org/citation> <https://doi.org/10.11646/zoosymposia. 2.1.21> .
+	// <https://doi.org/10.1071/is24059> <https://schema.org/citation> <https://doi.org/10.11646/zoosymposia. 2.1.21> .
 	$uri = preg_replace('/\s+/', '', $uri);
 
 
@@ -260,7 +260,7 @@ function csl_to_quads($csl, $options = [])
 	$quads[] = array(
 		$s, 
 		'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',
-		'http://schema.org/' . $type
+		'https://schema.org/' . $type
 		);	
 		
 		
@@ -274,7 +274,7 @@ function csl_to_quads($csl, $options = [])
 			{
 				if ($relation->{'id-type'} == 'doi')
 				{
-					$p = 'http://schema.org/seeAlso'; // could do with something more specific
+					$p = 'https://schema.org/seeAlso'; // could do with something more specific
 					$o = 'https://doi.org/' . nice_uri($relation->id);
 					$quads[] = array($s, $p, $o);					
 				}
@@ -287,7 +287,7 @@ function csl_to_quads($csl, $options = [])
 			{
 				if ($relation->{'id-type'} == 'doi')
 				{
-					$p = 'http://schema.org/seeAlso'; // could do with something more specific
+					$p = 'https://schema.org/seeAlso'; // could do with something more specific
 					$o = 'https://doi.org/' . nice_uri($relation->id);
 					$quads[] = array($s, $p, $o);					
 				}
@@ -304,7 +304,7 @@ function csl_to_quads($csl, $options = [])
 		{
 			foreach ($csl->multi->_key->title as $language => $value)
 			{
-				$p = 'http://schema.org/name';
+				$p = 'https://schema.org/name';
 				$o = '"' . nice_literal($value) . '"@' . $language;
 								
 				$quads[] = array($s, $p, $o);
@@ -334,7 +334,7 @@ function csl_to_quads($csl, $options = [])
 		
 		if ($name != '')
 		{
-			$p = 'http://schema.org/name';
+			$p = 'https://schema.org/name';
 			$o = '"' . nice_literal($name)  . '"';			
 			
 			$quads[] = array($s, $p, $o);
@@ -370,7 +370,7 @@ function csl_to_quads($csl, $options = [])
 			
 			$quads[] = array(
 				$s, 
-				'http://schema.org/abstract', 
+				'https://schema.org/abstract', 
 				$abstract
 				);
 		}
@@ -411,7 +411,7 @@ function csl_to_quads($csl, $options = [])
 				// treat as simple literal
 				$quads[] = array(
 					$s, 
-					'http://schema.org/datePublished', 
+					'https://schema.org/datePublished', 
 					'"' . $date . '"'
 					);
 			}
@@ -421,7 +421,7 @@ function csl_to_quads($csl, $options = [])
 				// if we use date type
 				$quads[] = array(
 					$s, 
-					'http://schema.org/datePublished', 
+					'https://schema.org/datePublished', 
 					'"' . $date . '"^^<http://www.w3.org/2001/XMLSchema#' . $datetype . '>' 
 					);			
 			}
@@ -450,7 +450,7 @@ function csl_to_quads($csl, $options = [])
 			$quads[] = array(
 				$funder_id, 
 				'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 
-				'http://schema.org/Organization'
+				'https://schema.org/Organization'
 				);
 	
 			if (isset($funder->name))
@@ -459,7 +459,7 @@ function csl_to_quads($csl, $options = [])
 				
 				$quads[] = array(
 					$funder_id, 
-					'http://schema.org/name', 
+					'https://schema.org/name', 
 					$o
 					);
 			}
@@ -482,7 +482,7 @@ function csl_to_quads($csl, $options = [])
 					$quads[] = array(
 						$grant_id, 
 						'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 
-						'http://schema.org/Grant'
+						'https://schema.org/Grant'
 						);
 						
 					// award name is schema:identifier
@@ -490,21 +490,21 @@ function csl_to_quads($csl, $options = [])
 	
 					$quads[] = array(
 						$grant_id, 
-						'http://schema.org/identifier', 
+						'https://schema.org/identifier', 
 						$o
 						);
 	
 					// link award to funder								
 					$quads[] = array(
 						$grant_id, 
-						'http://schema.org/funder', 
+						'https://schema.org/funder', 
 						$funder_id
 					);
 					
 					// link award to work
 					$quads[] = array(
 						$s, 
-						'http://schema.org/funding', 
+						'https://schema.org/funding', 
 						$grant_id
 					);
 				}
@@ -515,7 +515,7 @@ function csl_to_quads($csl, $options = [])
 				// connect work directly to funder as we don't have award info
 				$quads[] = array(
 					$s, 
-					'http://schema.org/funder', 
+					'https://schema.org/funder', 
 					$funder_id,
 					);
 			}
@@ -547,7 +547,7 @@ function csl_to_quads($csl, $options = [])
 			// link work to creator
 			$quads[] = array(
 				$s, 
-				'http://schema.org/creator', 
+				'https://schema.org/creator', 
 				$creator_id
 				);
 				
@@ -555,7 +555,7 @@ function csl_to_quads($csl, $options = [])
 			$quads[] = array(
 				$creator_id, 
 				'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 
-				'http://schema.org/Person'
+				'https://schema.org/Person'
 				);			
 				
 			// simple details of creator
@@ -565,7 +565,7 @@ function csl_to_quads($csl, $options = [])
 				
 				$quads[] = array(
 					$creator_id, 
-					'http://schema.org/name', 
+					'https://schema.org/name', 
 					$o
 					);
 			}
@@ -575,7 +575,7 @@ function csl_to_quads($csl, $options = [])
 				
 				$quads[] = array(
 					$creator_id, 
-					'http://schema.org/givenName', 
+					'https://schema.org/givenName', 
 					$o
 					);
 			}
@@ -585,7 +585,7 @@ function csl_to_quads($csl, $options = [])
 				
 				$quads[] = array(
 					$creator_id, 
-					'http://schema.org/familyName', 
+					'https://schema.org/familyName', 
 					$o
 					);
 			}
@@ -638,7 +638,7 @@ function csl_to_quads($csl, $options = [])
 				{
 					$quads[] = array(
 						$s, 
-						'http://schema.org/citation', 
+						'https://schema.org/citation', 
 						$cited_id
 						);
 						
@@ -650,7 +650,7 @@ function csl_to_quads($csl, $options = [])
 						
 						$quads[] = array(
 							$cited_id, 
-							'http://schema.org/name', 
+							'https://schema.org/name', 
 							$text
 							);
 					
@@ -663,7 +663,7 @@ function csl_to_quads($csl, $options = [])
 						
 						$quads[] = array(
 							$cited_id, 
-							'http://schema.org/description', 
+							'https://schema.org/description', 
 							$text
 							);
 					
@@ -696,7 +696,7 @@ function csl_to_quads($csl, $options = [])
 			{
 				$quads[] = array(
 					$s, 
-					'http://schema.org/license', 
+					'https://schema.org/license', 
 					$license_url
 					);			
 			}
@@ -714,7 +714,7 @@ function csl_to_quads($csl, $options = [])
 			// link to work
 			$quads[] = array(
 				$s, 
-				'http://schema.org/publisher', 
+				'https://schema.org/publisher', 
 				$publisher_id
 				);		
 				
@@ -722,7 +722,7 @@ function csl_to_quads($csl, $options = [])
 			$quads[] = array(
 				$publisher_id, 
 				'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 
-				'http://schema.org/Organization'				
+				'https://schema.org/Organization'				
 				);				
 				
 			// name
@@ -730,7 +730,7 @@ function csl_to_quads($csl, $options = [])
 			
 			$quads[] = array(
 				$publisher_id, 
-				'http://schema.org/name', 
+				'https://schema.org/name', 
 				$o
 				);	
 		}
@@ -750,7 +750,7 @@ function csl_to_quads($csl, $options = [])
 		
 		$quads[] = array(
 			$s, 
-			'http://schema.org/description', 
+			'https://schema.org/description', 
 			$o
 			);
 	}
@@ -765,26 +765,26 @@ function csl_to_quads($csl, $options = [])
 		$quads[] = array(
 			$encoding_id, 
 			'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 
-			'http://schema.org/MediaObject'				
+			'https://schema.org/MediaObject'				
 			);		
 							
 		// encoding MIME type
 		$quads[] = array(
 			$encoding_id, 
-			'http://schema.org/encodingFormat',
+			'https://schema.org/encodingFormat',
 			'"application/vnd.citationstyles.csl+json"'
 			);
 			
 		// JSON string
 		$quads[] = array(
 			$encoding_id, 
-			'http://schema.org/text',
+			'https://schema.org/text',
 			$o			
 			);
 
 		$quads[] = array(
 			$s, 
-			'http://schema.org/encoding', 
+			'https://schema.org/encoding', 
 			$encoding_id
 			);
 	}
