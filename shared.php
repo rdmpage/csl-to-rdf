@@ -79,8 +79,31 @@ function nice_uri($uri)
 	// <https://doi.org/10.1139/gen-2015-0168> <https://schema.org/citation> <https://doi.org/10.1111/j.1471-8286.2007.01678.x. pmid:> .
 	$uri = preg_replace('/\.\s+pmid:/', '', $uri);	
 	
-	// <https://doi.org/10.1007/s10531-023-02686-9> <https://schema.org/citation> <https://doi.org/10.1139/gen-2019-0226%m32502367> .
-	$uri = preg_replace('/%m\d+/', '', $uri);
+	// invisible characters copied from PDFs, e.g. soft hyphens in 10.15­5­60/13.1.2031
+	$uri = preg_replace('/[\x{00AD}\x{200B}-\x{200D}\x{2060}\x{FEFF}]/u', '', $uri);
+
+	// multiplication sign for X, e.g. 10.1163/187525409×462403
+	if (preg_match('/^10\.\d+\//', $uri))
+	{
+		$uri = str_replace('×', 'x', $uri);
+	}
+
+	// EndNote tags glued onto the end, e.g. 10.1139/gen-2019-0226%m32502367,
+	// 10.1093/aob/mcf174%jannalsofbotany. A real percent-encoding is always
+	// followed by two hex digits, so cut at the first % that isn't
+	$uri = preg_replace('/%(?![0-9A-Fa-f]{2}).*$/', '', $uri);
+
+	// HTML debris, e.g. 10.1007/s00606-011-0469-4"%3E
+	$uri = preg_replace('/".*$/', '', $uri);
+
+	// | used instead of /, e.g. 10.1093|nar|gkr408
+	if (preg_match('/^10\.\d+\|/', $uri))
+	{
+		$uri = str_replace('|', '/', $uri);
+	}
+
+	// trailing junk, e.g. 10.1371/journal.pone.0023496\ and 10.1111/1744-7917.12838|
+	$uri = rtrim($uri, '\\|');
 	
 	// <https://doi.org/10.1071/is24059> <https://schema.org/citation> <https://doi.org/10.11646/zoosymposia. 2.1.21> .
 	$uri = preg_replace('/\s+/', '', $uri);
@@ -91,6 +114,10 @@ function nice_uri($uri)
 	$uri = str_replace('<', urlencode('<'), $uri);
 	$uri = str_replace('>', urlencode('>'), $uri);
 
+	// last resort, percent-encode anything else not allowed in an IRI so that a
+	// single bad identifier can't stop a triple store load
+	$uri = preg_replace_callback('/[\x00-\x20"{}|\\\\^`]/', function ($m) { return rawurlencode($m[0]); }, $uri);
+
 	return $uri;
 }
 
@@ -98,9 +125,6 @@ function nice_uri($uri)
 // Clean up text to play nice with triple stire
 function nice_literal($text)
 {
-	// known errors
-	$text = str_replace('\\N', '\\\\N', $text);
-	
 	// remove HTML/XML tags
 	$text = strip_tags($text);
 	
@@ -110,8 +134,9 @@ function nice_literal($text)
 	// clean up spaces
 	$text = preg_replace('/\s\s+/', ' ', $text);	
 	
-	// escape double quotes
-	$text = str_replace('"', '\"', $text);
+	// escape backslashes (must come first) and double quotes, as N-Triples only
+	// allows a few escape sequences and a bare backslash is a parse error
+	$text = str_replace(['\\', '"'], ['\\\\', '\\"'], $text);
 
 	return $text;
 }
@@ -308,7 +333,7 @@ function csl_to_quads($csl, $options = [])
 	{
 		if (isset($csl->DOI))
 		{	
-			$s = 'https://doi.org/' . nice_uri(strtolower($csl->DOI));
+			$s = 'https://doi.org/' . nice_uri(mb_strtolower($csl->DOI, 'UTF-8'));
 		}
 	}
 	
@@ -316,7 +341,7 @@ function csl_to_quads($csl, $options = [])
 	{
 		if (isset($csl->URL))
 		{	
-			$s = nice_uri(strtolower($csl->URL));
+			$s = nice_uri(mb_strtolower($csl->URL, 'UTF-8'));
 		}
 	}
 	
@@ -324,7 +349,7 @@ function csl_to_quads($csl, $options = [])
 	{
 		if (isset($csl->id) && preg_match('/^http/', $csl->id))
 		{	
-			$s = nice_uri(strtolower($csl->id));
+			$s = nice_uri(mb_strtolower($csl->id, 'UTF-8'));
 		}
 	}	
 	
@@ -742,7 +767,7 @@ function csl_to_quads($csl, $options = [])
 			
 			if (isset($reference->DOI))
 			{
-				$cited_id = 'https://doi.org/' . nice_uri(strtolower($reference->DOI));
+				$cited_id = 'https://doi.org/' . nice_uri(mb_strtolower($reference->DOI, 'UTF-8'));
 			}	
 			
 			if ($cited_id == '' && in_array('allcitations', $options))
