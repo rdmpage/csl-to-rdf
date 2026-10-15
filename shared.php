@@ -4,6 +4,11 @@ error_reporting(E_ALL);
 
 require_once(dirname(__FILE__) . '/vendor/autoload.php');
 
+if (file_exists(dirname(__FILE__) . '/config.inc.php'))
+{
+	require_once(dirname(__FILE__) . '/config.inc.php');
+}
+
 
 //----------------------------------------------------------------------------------------
 function get($url, $content_type = '')
@@ -107,8 +112,74 @@ function nice_literal($text)
 	
 	// escape double quotes
 	$text = str_replace('"', '\"', $text);
-	
+
 	return $text;
+}
+
+//----------------------------------------------------------------------------------------
+// norm/1: NFKC, case-fold, strip diacritics, strip punctuation (hyphens become
+// spaces), collapse whitespace
+function normalize_name($text)
+{
+	$text = Normalizer::normalize($text, Normalizer::FORM_KC);
+	$text = mb_strtolower($text, 'UTF-8');
+
+	// strip diacritics
+	$text = Normalizer::normalize($text, Normalizer::FORM_D);
+	$text = preg_replace('/\p{Mn}/u', '', $text);
+
+	$text = preg_replace('/[\p{Pd}]/u', ' ', $text);
+	$text = preg_replace('/[\p{P}\p{S}]/u', '', $text);
+
+	$text = preg_replace('/\s+/u', ' ', $text);
+	$text = trim($text);
+
+	return $text;
+}
+
+//----------------------------------------------------------------------------------------
+// Mint a deterministic IRI of a given type from a list of key parts
+function mint_iri($type, $parts)
+{
+	global $config;
+	
+	$key = $config['norm_version'] . '|' . $type . '|' . join('|', $parts);
+	return $config['id_namespace'] . $type . '/' . substr(hash('sha256', $key), 0, 32);
+}
+
+//----------------------------------------------------------------------------------------
+// Work-scoped IRI for a CSL name without an ORCID, keyed on the work IRI and the
+// normalized name (never position). Returns null if there is no name to key on.
+function person_iri($work_iri, $creator)
+{
+	$name = '';
+
+	if (isset($creator->literal))
+	{
+		$name = $creator->literal;
+	}
+	else
+	{
+		$name_parts = array();
+		if (isset($creator->given))
+		{
+			$name_parts[] = $creator->given;
+		}
+		if (isset($creator->family))
+		{
+			$name_parts[] = $creator->family;
+		}
+		$name = join(' ', $name_parts);
+	}
+
+	$name = normalize_name($name);
+
+	if ($name == '')
+	{
+		return null;
+	}
+
+	return mint_iri('person', array($work_iri, $name));
 }
 
 //----------------------------------------------------------------------------------------
@@ -546,11 +617,17 @@ function csl_to_quads($csl, $options = [])
 				}
 			}
 			
-			// no guid then blank node
+			// no guid then work-scoped IRI
 			if ($creator_id == '')
 			{
-				$creator_id = '_:' . $cuid->cuid();
-			}	
+				$creator_id = person_iri($s, $creator);
+			}
+
+			// no name to key on either, so nothing we can say about this creator
+			if (!$creator_id)
+			{
+				continue;
+			}
 			
 			// link work to creator
 			$quads[] = array(

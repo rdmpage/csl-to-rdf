@@ -50,7 +50,7 @@ wg -- funder --> Organization
 CreativeWork -- funder --> Organization
 ```
 
-For funding, consider using blank nodes for funders without DOIs. Yes, blank nodes can be problematic, but this would seem a good use case.
+Funders without a Crossref Funder Registry DOI, and grants (which CSL gives us only as an award string), get minted IRIs rather than blank nodes: blank nodes are not addressable in SPARQL results or federated queries, which matters once the graph is published. Both are keyed on their normalized name so that the same funder unifies across works. See [Identity for nodes without a global identifier](DESIGN.md#identity-for-nodes-without-a-global-identifier) in the design notes for the namespace and keying rules.
 
 ### Dates
 
@@ -58,7 +58,7 @@ If we want sensible query performance from a triplestore, then `schema:datePubli
 
 ### Authorship
 
-(discus how we do that, schema:creator versus schema:author, and whether we order authors or not).
+Authors are linked with `schema:creator` and are not ordered for now (ORCID's JSON-LD ignores order too). Authors with an ORCID use it as their IRI. Others get a minted IRI scoped to the work, keyed on the work IRI plus the normalized name. These IRIs are deterministic and addressable, but they make no claim that same-named authors of different works are the same person. See [Authorship](DESIGN.md#authorship) in the design notes.
 
 ### CSL-JSON and displaying references
 

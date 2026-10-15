@@ -63,8 +63,9 @@ Several entities in CSL-JSON have no globally-resolvable identifier:
 - **Authors** without an ORCID
 - **Cited works** without a DOI (when `allcitations` is enabled)
 
-Today these are all minted as blank nodes with a fresh CUID per run
-(`shared.php`, e.g. the `_:` + `$cuid->cuid()` pattern). Behind a public
+Originally these were all minted as blank nodes with a fresh CUID per run
+(`shared.php`, e.g. the `_:` + `$cuid->cuid()` pattern). Authors now get
+work-scoped IRIs (`person_iri()`); the others are still blank nodes. Behind a public
 endpoint that is not merely inelegant, it is broken:
 
 - **Blank node labels are not addressable.** They are scoped to a single result
@@ -175,8 +176,7 @@ person". The risk is not uniform:
 | Funder (no DOI) | **global** | normalized name |
 | Publisher (string) | **global** | normalized name |
 | Grant | **global** | funder identifier + normalized award string |
-| Person (no ORCID), distinctive name | **global** | normalized name |
-| Person (no ORCID), weak name | work-scoped | work IRI + normalized name |
+| Person (no ORCID) | work-scoped | work IRI + normalized name |
 | Cited work (no DOI) | work-scoped | work IRI + `reference.key`, else hash of `unstructured` |
 | CSL encoding `MediaObject` | work-scoped | work IRI (one encoding per work) |
 
@@ -186,13 +186,23 @@ collision-prone: globally merging `Y. Wang` or `J. Smith` across a biodiversity
 literature corpus produces monster nodes with thousands of works spanning a
 century — a visible, embarrassing error in a public graph.
 
-**The distinctiveness gate** avoids the worst of that without any
-reconciliation: merge a person globally only when the name carries enough
-signal — at least one given-name token of two or more characters (i.e. not
-initials only) and a family name present. Initials-only names, and CSL
-`literal` names that cannot be parsed into given/family, fall back to
-work-scoped. One function, and it kills the `J. Smith` case while still merging
-`Roderic D. M. Page`.
+**Persons are never merged by name in the IRI.** An earlier draft proposed a
+"distinctiveness gate" (merge globally when there is a non-initial given name
+and a family name). It blocks `J. Smith` but passes `Wei Wang`, `Li Zhang` and
+other full names that are extremely common in recent taxonomic literature, and
+an over-merge baked into an IRI is the expensive direction to repair. So person
+IRIs assert only what the source says — *someone with this name authored this
+work* — and cross-work identity lives in a separate, derived layer: name-based
+clusters or candidate matches (weak links, never `owl:sameAs`), plus links from
+later reconciliation (ORCID, Wikidata, BHL creators). That layer can be
+rebuilt or retracted without re-minting anything.
+
+Known cost: two authors of the same work with identical normalized names
+collapse into one node. This is rare and accepted, since adding position to
+the key would bring back the cross-source duplicates.
+
+A creator with no usable name (no `literal`, `given` or `family`) is dropped,
+as there is nothing to key on.
 
 #### Normalization is load-bearing and must be versioned
 
@@ -220,6 +230,14 @@ norm/1|grant|https://doi.org/10.13039/100000001|1452510
 ```
 
 IRI local part: first 32 hex characters of the SHA-256 of that string.
+
+Work-scoped keys insert the work IRI before the name, e.g.
+`norm/1|person|https://doi.org/10.3897/zookeys.976.53859|roderic d m page`.
+
+In code this is `normalize_name()`, `mint_iri()` and `person_iri()` in
+`shared.php`. The base is `$config['id_namespace']` in `config.inc.php`, defaulting
+to the placeholder `https://w3id.org/kg/id/` until the real namespace is
+registered.
 
 ### Keeping the gamble reversible
 
@@ -255,6 +273,9 @@ Recorded so the reasoning is not re-litigated:
   that: blank nodes are not addressable in SPARQL results or federated queries.
   Work-scoped *IRIs* give the same "no cross-work claim" semantics while
   remaining queryable.
+- **Global name-merging of persons is out.** It was briefly adopted with a
+  distinctiveness gate; reverted because full-name collisions are too common in
+  the corpus (see Keying).
 - **`.well-known/genid/` and DOI fragments are out**, for the reasons under
   "Namespace". Both were earlier recommendations; both are fine privately and
   wrong publicly.
@@ -297,11 +318,13 @@ none of them perfectly:
    of writing, corresponding author flag, etc.) without polluting the Person
    node.
 
-### Current leaning
+### Current decision
 
-Switch from `schema:creator` to `schema:author` and add `schema:position`
-(option 1). Reserve the `Role` pattern (option 4) for the day we start
-ingesting affiliations or corresponding-author flags.
+Ordering is postponed. We emit unordered `schema:creator`, partly because
+ORCID's own JSON-LD ignores author order too. When ordering is needed, the
+leaning is `schema:position` (option 1), with the `Role` pattern (option 4)
+kept for the day we start ingesting affiliations or corresponding-author
+flags.
 
 ### Identity, again
 
@@ -314,12 +337,9 @@ repeating here because they bite specifically on authors:
   re-creates the duplicate-author-per-source problem it was meant to avoid.
   Position is emitted as `schema:position` on the node and plays no part in its
   identity.
-- **Merging by name is not uniformly worse than splitting.** The earlier
-  conclusion — never merge people by name — is too blunt. It is right for
-  initials-only and unparseable names, which is why those stay work-scoped. For
-  a name carrying real signal it costs us every "all works by this person"
-  query, so distinctive names merge globally, with the raw string retained and
-  the over-merge audit query as the safety net.
+- **Person IRIs are always work-scoped.** "All works by this person" queries
+  go through the derived clustering/reconciliation layer described under
+  Keying, not through name-merged IRIs.
 
 ## Open questions
 

@@ -28,7 +28,7 @@ while (!feof($file_handle))
 
 
 $debug = true;
-//$debug = false;
+$debug = false;
 
 $force = false;
 //$force = true;
@@ -70,7 +70,7 @@ foreach ($dois as $doi)
 	{	
 		$url = 'https://doi.org/' . $doi;	
 		$json = get($url, 'application/vnd.citationstyles.csl+json');
-
+		
 		file_put_contents($doi_filename, $json);
 		
 		// Give server a break 
