@@ -268,6 +268,7 @@ function csl_to_quads($csl, $options = [])
 	// relationship between this work and others, e.g. preprint
 	if (isset($csl->relation))
 	{
+		// there is a preprint
 		if (isset($csl->relation->{'has-preprint'}))
 		{
 			foreach ($csl->relation->{'has-preprint'} as $relation)
@@ -281,6 +282,7 @@ function csl_to_quads($csl, $options = [])
 			}
 		}
 		
+		// this work is a preprint
 		if (isset($csl->relation->{'is-preprint-of'}))
 		{
 			foreach ($csl->relation->{'is-preprint-of'} as $relation)
@@ -289,7 +291,13 @@ function csl_to_quads($csl, $options = [])
 				{
 					$p = 'https://schema.org/seeAlso'; // could do with something more specific
 					$o = 'https://doi.org/' . nice_uri($relation->id);
-					$quads[] = array($s, $p, $o);					
+					$quads[] = array($s, $p, $o);	
+					
+					// declare this work to be a preprint using 
+					// the FRBR-aligned Bibliographic Ontology (FaBiO)
+					$p = 'https://schema.org/additionalType';
+					$o = 'http://purl.org/spar/fabio/Preprint';
+					$quads[] = array($s, $p, $o);		
 				}
 			}
 		}
