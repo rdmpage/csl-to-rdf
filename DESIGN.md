@@ -64,8 +64,9 @@ Several entities in CSL-JSON have no globally-resolvable identifier:
 - **Cited works** without a DOI (when `allcitations` is enabled)
 
 Originally these were all minted as blank nodes with a fresh CUID per run
-(`shared.php`, e.g. the `_:` + `$cuid->cuid()` pattern). Authors now get
-work-scoped IRIs (`person_iri()`); the others are still blank nodes. Behind a public
+(`shared.php`, e.g. the `_:` + `$cuid->cuid()` pattern). All of them now get
+minted IRIs following the keying rules below; the converter emits no blank
+nodes. Behind a public
 endpoint that is not merely inelegant, it is broken:
 
 - **Blank node labels are not addressable.** They are scoped to a single result
@@ -202,7 +203,24 @@ collapse into one node. This is rare and accepted, since adding position to
 the key would bring back the cross-source duplicates.
 
 A creator with no usable name (no `literal`, `given` or `family`) is dropped,
-as there is nothing to key on.
+as there is nothing to key on. The same applies to a funder with neither a DOI
+nor a name, an award string that normalizes to nothing, and a cited work with
+neither a `key` nor an `unstructured` citation.
+
+Details of the other keys:
+
+- **Organizations** (funders without a DOI, publishers given as strings) share
+  the `organization` type, so a publisher and a funder with the same
+  normalized name are one node. A leading `the` is dropped.
+- **Grants** key on the funder's IRI (DOI or minted) plus the normalized award
+  string, so `DEB-1234` and `DEB 1234` from the same funder agree, while the
+  same number from two funders stays distinct.
+- **Cited works** use `reference.key` if present, otherwise the normalized
+  `unstructured` text. The key parts are labelled (`key` / `unstructured`) so
+  the two can never collide.
+- **Encodings** key on the work IRI alone. If several CSL sources for one work
+  are loaded into the same graph, their `schema:text` values accumulate on one
+  `MediaObject`; a named graph per source would keep them apart.
 
 #### Normalization is load-bearing and must be versioned
 
@@ -234,8 +252,8 @@ IRI local part: first 32 hex characters of the SHA-256 of that string.
 Work-scoped keys insert the work IRI before the name, e.g.
 `norm/1|person|https://doi.org/10.3897/zookeys.976.53859|roderic d m page`.
 
-In code this is `normalize_name()`, `mint_iri()` and `person_iri()` in
-`shared.php`. The base is `$config['id_namespace']` in `config.inc.php`, defaulting
+In code this is `normalize_name()`, `mint_iri()`, `person_iri()`,
+`organization_iri()` and `cited_work_iri()` in `shared.php`. The base is `$config['id_namespace']` in `config.inc.php`, defaulting
 to the placeholder `https://w3id.org/kg/id/` until the real namespace is
 registered.
 

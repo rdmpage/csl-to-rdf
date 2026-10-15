@@ -183,6 +183,49 @@ function person_iri($work_iri, $creator)
 }
 
 //----------------------------------------------------------------------------------------
+// Global IRI for an organization (funder or publisher) without an identifier, keyed
+// on the normalized name. Returns null if there is no name to key on.
+function organization_iri($name)
+{
+	$name = normalize_name($name);
+	$name = preg_replace('/^the /u', '', $name);
+
+	if ($name == '')
+	{
+		return null;
+	}
+
+	return mint_iri('organization', array($name));
+}
+
+//----------------------------------------------------------------------------------------
+// Work-scoped IRI for a cited work without a DOI, keyed on the citing work IRI plus
+// the reference key, or failing that the unstructured citation. Returns null if
+// there is nothing to key on.
+function cited_work_iri($work_iri, $reference)
+{
+	if (isset($reference->key))
+	{
+		$key = trim(preg_replace('/[\t\n\r]/u', '', $reference->key));
+		if ($key != '')
+		{
+			return mint_iri('work', array($work_iri, 'key', $key));
+		}
+	}
+
+	if (isset($reference->unstructured))
+	{
+		$text = normalize_name($reference->unstructured);
+		if ($text != '')
+		{
+			return mint_iri('work', array($work_iri, 'unstructured', $text));
+		}
+	}
+
+	return null;
+}
+
+//----------------------------------------------------------------------------------------
 // Simplify CSL to just those elements we need to create a formatted record
 function simplify_csl($csl)
 {	
@@ -256,8 +299,6 @@ function simplify_csl($csl)
 function csl_to_quads($csl, $options = [])
 {
 	$quads = array();
-	
-	$cuid = new EndyJasmi\Cuid;
 	
 	$s = null;
 	
@@ -519,10 +560,16 @@ function csl_to_quads($csl, $options = [])
 				$funder_id = 'https://doi.org/' . nice_uri($funder->DOI);
 			}
 			
-			if ($funder_id == '')
+			if ($funder_id == '' && isset($funder->name))
 			{
-				// blank node
-				$funder_id = '_:' . $cuid->cuid();
+				// global IRI keyed on name, so the same funder unifies across works
+				$funder_id = organization_iri($funder->name);
+			}
+
+			// no DOI and no name, so nothing we can say about this funder
+			if (!$funder_id)
+			{
+				continue;
 			}
 		
 			// funder is an organisation
@@ -554,9 +601,14 @@ function csl_to_quads($csl, $options = [])
 				// awards are text strings, e.g. grant numbers
 				foreach ($funder->award as $award)
 				{
-					// blank node
-					$grant_id = '_:' . $cuid->cuid();
-										
+					// global IRI keyed on funder and award
+					$award_key = normalize_name($award);
+					if ($award_key == '')
+					{
+						continue;
+					}
+					$grant_id = mint_iri('grant', array($funder_id, $award_key));
+
 					// is a schema:Grant
 					$quads[] = array(
 						$grant_id, 
@@ -693,23 +745,12 @@ function csl_to_quads($csl, $options = [])
 				$cited_id = 'https://doi.org/' . nice_uri(strtolower($reference->DOI));
 			}	
 			
-			// Decide how to handle citations that lack DOIs, what level of detail to include, etc.
-			// Also decide how to refer to them, e.g. using "key" as part of a fragment identifier
-			
 			if ($cited_id == '' && in_array('allcitations', $options))
 			{
-				// blank node
-				$cited_id = '_:' . $cuid->cuid();	
+				// work-scoped IRI keyed on reference key or unstructured citation
+				$cited_id = cited_work_iri($s, $reference);
 			}
 			
-			// local identifier (do we use this?)
-			$key = '';
-			if (isset($reference->key))
-			{
-				$key = $reference->key;
-				$key = preg_replace('/[\t\n\r]/u', '', $key);
-			}			
-						
 			if ($cited_id != '')
 			{
 				$add = isset($reference->DOI); 
@@ -791,11 +832,16 @@ function csl_to_quads($csl, $options = [])
 	// publisher -------------------------------------------------------------------------
 	if (isset($csl->publisher))
 	{
+		$publisher_id = null;
 		if (is_string($csl->publisher))
 		{
-			// blank node
-			$publisher_id = '_:' . $cuid->cuid();
-			
+			// global IRI keyed on name
+			$publisher_id = organization_iri($csl->publisher);
+		}
+
+		if ($publisher_id)
+		{
+
 			// link to work
 			$quads[] = array(
 				$s, 
@@ -843,8 +889,8 @@ function csl_to_quads($csl, $options = [])
 	{
 		// CSL-JSON as an encoding
 		
-		// blank node
-		$encoding_id = '_:' . $cuid->cuid();
+		// work-scoped IRI, one encoding per work
+		$encoding_id = mint_iri('encoding', array($s));
 		
 		// type 
 		$quads[] = array(

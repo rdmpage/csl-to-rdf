@@ -34,7 +34,7 @@ $force = false;
 //$force = true;
 
 $options = [
-	'allcitations', // include references that lack DOIs (i.e., we have blank nodes) 
+	'allcitations', // include references that lack DOIs (minted work-scoped IRIs) 
 	'nquads' 		// named graph with HTTPS DOI as URI, otherwise just output triples
 	];
 	
