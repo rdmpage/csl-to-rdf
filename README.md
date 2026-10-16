@@ -2,6 +2,8 @@
 
 Convert CSL-JSON to RDF using terms from [schema.org](https://schema.org).
 
+> **TODO:** journals are not yet included in the RDF, so works can't be queried by journal. See [TODO.md](TODO.md).
+
 
 ## Design considerations
 
